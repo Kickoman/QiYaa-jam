@@ -1,0 +1,873 @@
+{
+  "result": {
+    "acceptedSeeds": [
+      {
+        "tag": "onyourwave",
+        "type": "user",
+        "value": "onyourwave"
+      }
+    ],
+    "batchId": "B-scrubbed",
+    "descriptionSeed": {
+      "tag": "onyourwave",
+      "type": "user",
+      "value": "onyourwave"
+    },
+    "pumpkin": false,
+    "radioSessionId": "S-scrubbed",
+    "sequence": [
+      {
+        "liked": false,
+        "track": {
+          "id": "2189841",
+          "realId": "2189841",
+          "title": "Make Me Wanna Die",
+          "version": "Acoustic Version",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 213940,
+          "fileSize": 0,
+          "r128": {
+            "i": -8.53,
+            "tp": 1.05,
+            "importantSecs": 213
+          },
+          "fade": {
+            "inStart": 0.3,
+            "inStop": 1.5,
+            "outStart": 211.5,
+            "outStop": 211.9
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "8acdcdea.p.160247/",
+                "uri": "avatars.yandex.net/get-music-content/33216/8acdcdea.p.160247/%%",
+                "type": "from-artist-photos"
+              },
+              "cutoutCover": {
+                "uri": "avatars.yandex.net/get-music-content/16154377/c855e08b.c.970421/%%"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 160247,
+              "name": "The Pretty Reckless",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 216678,
+              "title": "Miss Nothing",
+              "type": "single",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "8acdcdea.p.160247/",
+                    "uri": "avatars.yandex.net/get-music-content/33216/8acdcdea.p.160247/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "cutoutCover": {
+                    "uri": "avatars.yandex.net/get-music-content/16154377/c855e08b.c.970421/%%"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 160247,
+                  "name": "The Pretty Reckless",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                2189840
+              ],
+              "childContent": false,
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/49707/42cd6543.a.216678-1/%%",
+                "derivedColors": {
+                  "average": "#989999",
+                  "waveText": "#e0e0e0",
+                  "miniPlayer": "#b7b8b8",
+                  "accent": "#989999"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/49707/42cd6543.a.216678-1/%%",
+              "derivedColors": {
+                "average": "#989999",
+                "waveText": "#e0e0e0",
+                "miniPlayer": "#b7b8b8",
+                "accent": "#989999"
+              },
+              "disclaimers": [],
+              "genre": "alternative",
+              "labels": [
+                {
+                  "id": 2004,
+                  "name": "Interscope"
+                }
+              ],
+              "likesCount": 272,
+              "metaTagId": "58e3c0796ebb3476087d1902",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/49707/42cd6543.a.216678-1/%%",
+              "recent": false,
+              "releaseDate": "2010-09-27T00:00:00+04:00",
+              "trackCount": 2,
+              "version": "UK Version Revised",
+              "veryImportant": false,
+              "year": 2010,
+              "trackPosition": {
+                "volume": 1,
+                "index": 2
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/49707/42cd6543.a.216678-1/%%",
+          "derivedColors": {
+            "average": "#999999",
+            "waveText": "#e0e0e0",
+            "miniPlayer": "#b7b7b7",
+            "accent": "#999999"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/49707/42cd6543.a.216678-1/%%",
+          "lyricsAvailable": true,
+          "best": false,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": false,
+            "hasAvailableTextLyrics": false
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview"
+          ],
+          "mixFade": {
+            "inStart": 3.824,
+            "inStop": 8.773,
+            "outStart": 186.544,
+            "outStop": 191.493
+          }
+        },
+        "trackParameters": {
+          "bpm": 97,
+          "energy": 0.44323874,
+          "hue": 178.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 3.824,
+            "inStop": 8.773,
+            "outStart": 186.544,
+            "outStop": 191.493
+          }
+        },
+        "type": "track"
+      },
+      {
+        "liked": false,
+        "track": {
+          "id": "26711967",
+          "realId": "26711967",
+          "title": "Breath Holding",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 320100,
+          "fileSize": 0,
+          "r128": {
+            "i": -9.91,
+            "tp": 0.6,
+            "importantSecs": 320
+          },
+          "fade": {
+            "inStart": 0.7,
+            "inStop": 1.5,
+            "outStart": 317.2,
+            "outStop": 318.1
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "23a41b36.p.4092132/",
+                "uri": "avatars.yandex.net/get-music-content/38044/23a41b36.p.4092132/%%",
+                "type": "from-artist-photos"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 4092132,
+              "name": "Weid",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 3186060,
+              "title": "Inhale",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "23a41b36.p.4092132/",
+                    "uri": "avatars.yandex.net/get-music-content/38044/23a41b36.p.4092132/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 4092132,
+                  "name": "Weid",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                26711967
+              ],
+              "childContent": false,
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/28589/660575d6.a.3186060-1/%%",
+                "derivedColors": {
+                  "average": "#212025",
+                  "waveText": "#e0e0e0",
+                  "miniPlayer": "#b4b2bc",
+                  "accent": "#9491a0"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/28589/660575d6.a.3186060-1/%%",
+              "derivedColors": {
+                "average": "#212025",
+                "waveText": "#e0e0e0",
+                "miniPlayer": "#b4b2bc",
+                "accent": "#9491a0"
+              },
+              "disclaimers": [],
+              "genre": "prog",
+              "labels": [
+                {
+                  "id": 677936,
+                  "name": "Партнёрская программа Яндекс Музыки"
+                }
+              ],
+              "likesCount": 103,
+              "metaTagId": "58e3c0796ebb3476087d192b",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/28589/660575d6.a.3186060-1/%%",
+              "recent": false,
+              "releaseDate": "2015-01-26T00:00:00+03:00",
+              "trackCount": 4,
+              "veryImportant": false,
+              "year": 2015,
+              "trackPosition": {
+                "volume": 1,
+                "index": 4
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/28589/660575d6.a.3186060-1/%%",
+          "derivedColors": {
+            "average": "#181824",
+            "waveText": "#c1c1ff",
+            "miniPlayer": "#a9a9c5",
+            "accent": "#8484ad"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/28589/660575d6.a.3186060-1/%%",
+          "lyricsAvailable": false,
+          "best": true,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": false,
+            "hasAvailableTextLyrics": false
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview"
+          ],
+          "mixFade": {
+            "inStart": 145.505,
+            "inStop": 153.853,
+            "outStart": 261.318,
+            "outStop": 269.666
+          }
+        },
+        "trackParameters": {
+          "bpm": 115,
+          "energy": 0.57258546,
+          "hue": 273.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 145.505,
+            "inStop": 153.853,
+            "outStart": 261.318,
+            "outStop": 269.666
+          }
+        },
+        "type": "track"
+      },
+      {
+        "liked": false,
+        "track": {
+          "id": "33858",
+          "realId": "33858",
+          "title": "Mama Said",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 319690,
+          "fileSize": 0,
+          "r128": {
+            "i": -9.8,
+            "tp": 2.87,
+            "importantSecs": 319
+          },
+          "fade": {
+            "inStart": 0.4,
+            "inStop": 4.1,
+            "outStart": 313.6,
+            "outStop": 315.3
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "cba01543.p.3121/",
+                "uri": "avatars.yandex.net/get-music-content/16469857/cba01543.p.3121/%%",
+                "type": "from-artist-photos"
+              },
+              "cutoutCover": {
+                "uri": "avatars.yandex.net/get-music-content/17655650/4a27a571.c.989695/%%"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 3121,
+              "name": "Metallica",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 2804,
+              "title": "Load",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "cba01543.p.3121/",
+                    "uri": "avatars.yandex.net/get-music-content/16469857/cba01543.p.3121/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "cutoutCover": {
+                    "uri": "avatars.yandex.net/get-music-content/17655650/4a27a571.c.989695/%%"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 3121,
+                  "name": "Metallica",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                33858,
+                33859,
+                33860
+              ],
+              "childContent": false,
+              "contentWarning": "explicit",
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/42108/439c4822.a.2804-2/%%",
+                "derivedColors": {
+                  "average": "#0d2c2f",
+                  "waveText": "#c1f9ff",
+                  "miniPlayer": "#90d7de",
+                  "accent": "#60c6d1"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/42108/439c4822.a.2804-2/%%",
+              "derivedColors": {
+                "average": "#0d2c2f",
+                "waveText": "#c1f9ff",
+                "miniPlayer": "#90d7de",
+                "accent": "#60c6d1"
+              },
+              "disclaimers": [
+                "descriptionText:67370c8e13b92b0a60256675"
+              ],
+              "genre": "classicmetal",
+              "labels": [
+                {
+                  "id": 448792,
+                  "name": "Metallica"
+                }
+              ],
+              "likesCount": 21438,
+              "metaTagId": "58e3c0796ebb3476087d1908",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/42108/439c4822.a.2804-2/%%",
+              "recent": false,
+              "releaseDate": "2008-08-18T00:00:00+04:00",
+              "trackCount": 14,
+              "veryImportant": false,
+              "year": 1996,
+              "trackPosition": {
+                "volume": 1,
+                "index": 11
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/42108/439c4822.a.2804-2/%%",
+          "derivedColors": {
+            "average": "#142828",
+            "waveText": "#c1ffff",
+            "miniPlayer": "#9fcfcf",
+            "accent": "#77bbbb"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/42108/439c4822.a.2804-2/%%",
+          "lyricsAvailable": true,
+          "best": true,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": true,
+            "hasAvailableTextLyrics": true
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview"
+          ],
+          "mixFade": {
+            "inStart": 115.835,
+            "inStop": 123.0,
+            "outStart": 299.102,
+            "outStop": 306.266
+          }
+        },
+        "trackParameters": {
+          "bpm": 134,
+          "energy": 0.28927553,
+          "hue": 264.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 115.835,
+            "inStop": 123.0,
+            "outStart": 299.102,
+            "outStop": 306.266
+          }
+        },
+        "type": "track"
+      },
+      {
+        "liked": false,
+        "track": {
+          "id": "41592",
+          "realId": "41592",
+          "title": "Time is Running Out",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 237030,
+          "fileSize": 0,
+          "r128": {
+            "i": -8.72,
+            "tp": 1.03,
+            "importantSecs": 237
+          },
+          "fade": {
+            "inStart": 0.9,
+            "inStop": 1.5,
+            "outStart": 234.8,
+            "outStop": 235.8
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "8661faf7.p.12048/",
+                "uri": "avatars.yandex.net/get-music-content/114728/8661faf7.p.12048/%%",
+                "type": "from-artist-photos"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 12048,
+              "name": "Muse",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 50057,
+              "title": "Time Is Running Out",
+              "type": "single",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "8661faf7.p.12048/",
+                    "uri": "avatars.yandex.net/get-music-content/114728/8661faf7.p.12048/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 12048,
+                  "name": "Muse",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                41592
+              ],
+              "childContent": false,
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/49707/4a5aa647.a.50057-1/%%",
+                "derivedColors": {
+                  "average": "#1e1e1e",
+                  "waveText": "#e0e0e0",
+                  "miniPlayer": "#b7b7b7",
+                  "accent": "#999999"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/49707/4a5aa647.a.50057-1/%%",
+              "derivedColors": {
+                "average": "#1e1e1e",
+                "waveText": "#e0e0e0",
+                "miniPlayer": "#b7b7b7",
+                "accent": "#999999"
+              },
+              "disclaimers": [],
+              "genre": "alternative",
+              "labels": [
+                {
+                  "id": 173907,
+                  "name": "A&E"
+                }
+              ],
+              "likesCount": 1342,
+              "metaTagId": "58e3c0796ebb3476087d1902",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/49707/4a5aa647.a.50057-1/%%",
+              "recent": false,
+              "releaseDate": "2009-05-22T00:00:00+04:00",
+              "trackCount": 2,
+              "veryImportant": false,
+              "year": 2003,
+              "trackPosition": {
+                "volume": 1,
+                "index": 1
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/49707/4a5aa647.a.50057-1/%%",
+          "derivedColors": {
+            "average": "#1e1e1e",
+            "waveText": "#e0e0e0",
+            "miniPlayer": "#b7b7b7",
+            "accent": "#999999"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/49707/4a5aa647.a.50057-1/%%",
+          "lyricsAvailable": true,
+          "best": true,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": false,
+            "hasAvailableTextLyrics": false
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview"
+          ],
+          "mixFade": {
+            "inStart": 0.877,
+            "inStop": 9.013,
+            "outStart": 146.864,
+            "outStop": 155.0
+          }
+        },
+        "trackParameters": {
+          "bpm": 118,
+          "energy": 0.9405403,
+          "hue": 129.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 0.877,
+            "inStop": 9.013,
+            "outStart": 146.864,
+            "outStop": 155.0
+          }
+        },
+        "type": "track"
+      },
+      {
+        "liked": false,
+        "track": {
+          "id": "821077",
+          "realId": "821077",
+          "title": "Baby One More Time",
+          "version": "Live From The Bay Tavern / 1999",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 211040,
+          "fileSize": 0,
+          "r128": {
+            "i": -11.82,
+            "tp": 0.31,
+            "importantSecs": 211
+          },
+          "fade": {
+            "inStart": 0.4,
+            "inStop": 1.5,
+            "outStart": 207.9,
+            "outStop": 210.2
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "5f7835be.p.33022/",
+                "uri": "avatars.yandex.net/get-music-content/97284/5f7835be.p.33022/%%",
+                "type": "from-artist-photos"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 33022,
+              "name": "Travis",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 7811893,
+              "title": "The Man Who",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "5f7835be.p.33022/",
+                    "uri": "avatars.yandex.net/get-music-content/97284/5f7835be.p.33022/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 33022,
+                  "name": "Travis",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                46650181,
+                821077,
+                46569160
+              ],
+              "childContent": false,
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/118603/3c8c1136.a.7811893-1/%%",
+                "derivedColors": {
+                  "average": "#929a9f",
+                  "waveText": "#e0e0e0",
+                  "miniPlayer": "#b2b8bc",
+                  "accent": "#929a9f"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/118603/3c8c1136.a.7811893-1/%%",
+              "derivedColors": {
+                "average": "#929a9f",
+                "waveText": "#e0e0e0",
+                "miniPlayer": "#b2b8bc",
+                "accent": "#929a9f"
+              },
+              "disclaimers": [],
+              "genre": "rock",
+              "labels": [
+                {
+                  "id": 6741,
+                  "name": "Concord"
+                },
+                {
+                  "id": 49305,
+                  "name": "Craft"
+                }
+              ],
+              "likesCount": 462,
+              "metaTagId": "5ddcd572e7c903105b40c1c2",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/118603/3c8c1136.a.7811893-1/%%",
+              "recent": false,
+              "releaseDate": "1999-05-24T00:00:00+04:00",
+              "trackCount": 29,
+              "version": "20th Anniversary Edition",
+              "veryImportant": false,
+              "year": 1999,
+              "trackPosition": {
+                "volume": 2,
+                "index": 14
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/118603/3c8c1136.a.7811893-1/%%",
+          "derivedColors": {
+            "average": "#999999",
+            "waveText": "#e0e0e0",
+            "miniPlayer": "#b7b7b7",
+            "accent": "#999999"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/118603/3c8c1136.a.7811893-1/%%",
+          "lyricsAvailable": true,
+          "best": true,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": true,
+            "hasAvailableTextLyrics": true
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview"
+          ],
+          "mixFade": {
+            "inStart": 37.707,
+            "inStop": 43.288,
+            "outStart": 195.578,
+            "outStop": 201.16
+          }
+        },
+        "trackParameters": {
+          "bpm": 172,
+          "energy": 0.20468411,
+          "hue": 225.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 37.707,
+            "inStop": 43.288,
+            "outStart": 195.578,
+            "outStop": 201.16
+          }
+        },
+        "type": "track"
+      }
+    ],
+    "terminated": false,
+    "wave": {
+      "name": "Моя волна",
+      "stationId": "user:onyourwave",
+      "seeds": [
+        "user:onyourwave"
+      ],
+      "idForFrom": "user-onyourwave",
+      "type": "DEFAULT",
+      "description": "Моя волна"
+    },
+    "offlineRecommenderData": [
+      1,
+      0,
+      0
+    ],
+    "interactive": true
+  },
+  "invocationInfo": {
+    "hostname": "scrubbed",
+    "req-id": "scrubbed",
+    "app-name": "music-wave",
+    "exec-duration-millis": 403
+  }
+}

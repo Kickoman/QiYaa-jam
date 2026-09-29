@@ -1,0 +1,843 @@
+{
+  "result": {
+    "batchId": "B-scrubbed",
+    "pumpkin": false,
+    "sequence": [
+      {
+        "liked": false,
+        "track": {
+          "id": "28513172",
+          "realId": "28513172",
+          "title": "Вальс-Бостон",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 215370,
+          "fileSize": 0,
+          "r128": {
+            "i": -15.92,
+            "tp": -0.2,
+            "importantSecs": 215
+          },
+          "fade": {
+            "inStart": 0.2,
+            "inStop": 1.5,
+            "outStart": 210.0,
+            "outStop": 215.0
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "e1271b4c.p.412462/",
+                "uri": "avatars.yandex.net/get-music-content/14082060/e1271b4c.p.412462/%%",
+                "type": "from-artist-photos"
+              },
+              "cutoutCover": {
+                "uri": "avatars.yandex.net/get-music-content/17655650/f305ce9d.c.108120/%%"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 412462,
+              "name": "Александр Розенбаум",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 31800785,
+              "title": "50 лучших песен",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "e1271b4c.p.412462/",
+                    "uri": "avatars.yandex.net/get-music-content/14082060/e1271b4c.p.412462/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "cutoutCover": {
+                    "uri": "avatars.yandex.net/get-music-content/17655650/f305ce9d.c.108120/%%"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 412462,
+                  "name": "Александр Розенбаум",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                28513174,
+                28513172,
+                28513182
+              ],
+              "childContent": false,
+              "contentWarning": "explicit",
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/6058982/0480ece9.a.31800785-1/%%",
+                "derivedColors": {
+                  "average": "#141c28",
+                  "waveText": "#c1daff",
+                  "miniPlayer": "#a0b3ce",
+                  "accent": "#7893b9"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/6058982/0480ece9.a.31800785-1/%%",
+              "derivedColors": {
+                "average": "#141c28",
+                "waveText": "#c1daff",
+                "miniPlayer": "#a0b3ce",
+                "accent": "#7893b9"
+              },
+              "disclaimers": [
+                "descriptionText:67370c8e13b92b0a60256675"
+              ],
+              "genre": "rusestrada",
+              "labels": [
+                {
+                  "id": 903282,
+                  "name": "United Music Group"
+                }
+              ],
+              "likesCount": 11532,
+              "metaTagId": "58e3c0796ebb3476087d191f",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/6058982/0480ece9.a.31800785-1/%%",
+              "recent": false,
+              "releaseDate": "2024-06-21T00:00:00+03:00",
+              "trackCount": 50,
+              "veryImportant": false,
+              "year": 2024,
+              "trackPosition": {
+                "volume": 1,
+                "index": 12
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/6058982/0480ece9.a.31800785-1/%%",
+          "derivedColors": {
+            "average": "#141c28",
+            "waveText": "#c1daff",
+            "miniPlayer": "#a0b3ce",
+            "accent": "#7893b9"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/6058982/0480ece9.a.31800785-1/%%",
+          "lyricsAvailable": false,
+          "best": true,
+          "type": "music",
+          "rememberPosition": false,
+          "backgroundVideoUri": "https://runtime.strm.yandex.ru/videos/vplvp6spqtw5jioewqot/outputs/e6b755f07a87dcd1aafa3db1f1961c.mp4",
+          "trackSharingFlag": "COVER_ONLY",
+          "playerId": "vplvp6spqtw5jioewqot",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": true,
+            "hasAvailableTextLyrics": true
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview",
+            "karaoke"
+          ],
+          "mixFade": {
+            "inStart": 80.126,
+            "inStop": 85.519,
+            "outStart": 195.553,
+            "outStop": 200.946
+          }
+        },
+        "trackParameters": {
+          "bpm": 89,
+          "energy": 0.0074596703,
+          "hue": 331.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 80.126,
+            "inStop": 85.519,
+            "outStart": 195.553,
+            "outStop": 200.946
+          }
+        },
+        "type": "track"
+      },
+      {
+        "liked": false,
+        "track": {
+          "id": "2192904",
+          "realId": "2192904",
+          "title": "Медведица",
+          "version": "feat. Linda Leen и Yana Kay",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 234520,
+          "fileSize": 0,
+          "r128": {
+            "i": -8.05,
+            "tp": 0.86,
+            "importantSecs": 234
+          },
+          "fade": {
+            "inStart": 0.3,
+            "inStop": 1.5,
+            "outStart": 228.5,
+            "outStop": 231.5
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "fffb6dd8.p.41098/",
+                "uri": "avatars.yandex.net/get-music-content/2806365/fffb6dd8.p.41098/%%",
+                "type": "from-artist-photos"
+              },
+              "cutoutCover": {
+                "uri": "avatars.yandex.net/get-music-content/17696724/4cdcef83.c.1034134/%%"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 41098,
+              "name": "Мумий Тролль",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 11805582,
+              "title": "Best 20-20",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "fffb6dd8.p.41098/",
+                    "uri": "avatars.yandex.net/get-music-content/2806365/fffb6dd8.p.41098/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "cutoutCover": {
+                    "uri": "avatars.yandex.net/get-music-content/17696724/4cdcef83.c.1034134/%%"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 41098,
+                  "name": "Мумий Тролль",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                2192804,
+                2192886,
+                2192826
+              ],
+              "childContent": false,
+              "contentWarning": "explicit",
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/2811629/c15213db.a.11805582-1/%%",
+                "derivedColors": {
+                  "average": "#a39a28",
+                  "waveText": "#fffac1",
+                  "miniPlayer": "#f6ed78",
+                  "accent": "#f2e63f"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/2811629/c15213db.a.11805582-1/%%",
+              "derivedColors": {
+                "average": "#a39a28",
+                "waveText": "#fffac1",
+                "miniPlayer": "#f6ed78",
+                "accent": "#f2e63f"
+              },
+              "disclaimers": [
+                "descriptionText:67370c8e13b92b0a60256675"
+              ],
+              "genre": "rusrock",
+              "labels": [
+                {
+                  "id": 1034713,
+                  "name": "Warner Music Russia"
+                }
+              ],
+              "likesCount": 21432,
+              "metaTagId": "58e3c0796ebb3476087d1920",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/2811629/c15213db.a.11805582-1/%%",
+              "recent": false,
+              "releaseDate": "2020-08-19T00:00:00+03:00",
+              "trackCount": 40,
+              "veryImportant": false,
+              "year": 2020,
+              "trackPosition": {
+                "volume": 1,
+                "index": 33
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/2811629/c15213db.a.11805582-1/%%",
+          "derivedColors": {
+            "average": "#87aaaa",
+            "waveText": "#c1ffff",
+            "miniPlayer": "#abc3c3",
+            "accent": "#87aaaa"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/2811629/c15213db.a.11805582-1/%%",
+          "lyricsAvailable": true,
+          "best": false,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": true,
+            "hasAvailableTextLyrics": true
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview"
+          ]
+        },
+        "trackParameters": {
+          "bpm": 120,
+          "energy": 0.5,
+          "hue": 23.0,
+          "userCollectionHue": 94
+        },
+        "type": "track"
+      },
+      {
+        "liked": false,
+        "track": {
+          "id": "33165445",
+          "realId": "33165445",
+          "title": "Земля",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 306770,
+          "fileSize": 0,
+          "r128": {
+            "i": -10.65,
+            "tp": 0.71,
+            "importantSecs": 306
+          },
+          "fade": {
+            "inStart": 0.7,
+            "inStop": 1.5,
+            "outStart": 301.3,
+            "outStop": 306.3
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "2c965af8.p.432938/",
+                "uri": "avatars.yandex.net/get-music-content/14854709/2c965af8.p.432938/%%",
+                "type": "from-artist-photos"
+              },
+              "cutoutCover": {
+                "uri": "avatars.yandex.net/get-music-content/17722696/defb675c.c.964029/%%"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 432938,
+              "name": "Маша и Медведи",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 4050961,
+              "title": "Куда?",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "2c965af8.p.432938/",
+                    "uri": "avatars.yandex.net/get-music-content/14854709/2c965af8.p.432938/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "cutoutCover": {
+                    "uri": "avatars.yandex.net/get-music-content/17722696/defb675c.c.964029/%%"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 432938,
+                  "name": "Маша и Медведи",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                33165455,
+                33165445
+              ],
+              "childContent": false,
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/97284/200b5e62.a.4050961-1/%%",
+                "derivedColors": {
+                  "average": "#93939e",
+                  "waveText": "#e0e0e0",
+                  "miniPlayer": "#b3b3bb",
+                  "accent": "#93939e"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/97284/200b5e62.a.4050961-1/%%",
+              "derivedColors": {
+                "average": "#93939e",
+                "waveText": "#e0e0e0",
+                "miniPlayer": "#b3b3bb",
+                "accent": "#93939e"
+              },
+              "disclaimers": [],
+              "genre": "rusrock",
+              "labels": [
+                {
+                  "id": 1034713,
+                  "name": "Warner Music Russia"
+                }
+              ],
+              "likesCount": 4973,
+              "metaTagId": "58e3c0796ebb3476087d1920",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/97284/200b5e62.a.4050961-1/%%",
+              "recent": false,
+              "releaseDate": "2017-02-03T00:00:00+03:00",
+              "trackCount": 9,
+              "veryImportant": false,
+              "year": 2000,
+              "trackPosition": {
+                "volume": 1,
+                "index": 1
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/97284/200b5e62.a.4050961-1/%%",
+          "derivedColors": {
+            "average": "#93939e",
+            "waveText": "#e0e0e0",
+            "miniPlayer": "#b3b3bb",
+            "accent": "#93939e"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/97284/200b5e62.a.4050961-1/%%",
+          "lyricsAvailable": true,
+          "best": true,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": true,
+            "hasAvailableTextLyrics": true
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview"
+          ],
+          "mixFade": {
+            "inStart": 111.924,
+            "inStop": 116.773,
+            "outStart": 291.804,
+            "outStop": 296.653
+          }
+        },
+        "trackParameters": {
+          "bpm": 99,
+          "energy": 0.3579485,
+          "hue": 231.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 111.924,
+            "inStop": 116.773,
+            "outStart": 291.804,
+            "outStop": 296.653
+          }
+        },
+        "type": "track"
+      },
+      {
+        "liked": false,
+        "track": {
+          "id": "57486391",
+          "realId": "57486391",
+          "title": "The Wind The Scream (First Theme)",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 317730,
+          "fileSize": 0,
+          "r128": {
+            "i": -15.99,
+            "tp": -2.3,
+            "importantSecs": 317
+          },
+          "fade": {
+            "inStart": 0.2,
+            "inStop": 3.8,
+            "outStart": 309.0,
+            "outStop": 312.2
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "fc0f4ef5.p.7592/",
+                "uri": "avatars.yandex.net/get-music-content/49707/fc0f4ef5.p.7592/%%",
+                "type": "from-artist-photos"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 7592,
+              "name": "Ennio Morricone",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 8648127,
+              "title": "Belmondo - Music By Ennio Morricone",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "fc0f4ef5.p.7592/",
+                    "uri": "avatars.yandex.net/get-music-content/49707/fc0f4ef5.p.7592/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 7592,
+                  "name": "Ennio Morricone",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                57486411,
+                57486410,
+                57486391
+              ],
+              "childContent": false,
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/97284/32c4be99.a.8648127-1/%%",
+                "derivedColors": {
+                  "average": "#c87c69",
+                  "waveText": "#ffcec1",
+                  "miniPlayer": "#d9a396",
+                  "accent": "#c87c69"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/97284/32c4be99.a.8648127-1/%%",
+              "derivedColors": {
+                "average": "#c87c69",
+                "waveText": "#ffcec1",
+                "miniPlayer": "#d9a396",
+                "accent": "#c87c69"
+              },
+              "disclaimers": [],
+              "genre": "soundtrack",
+              "labels": [
+                {
+                  "id": 53811,
+                  "name": "DRG"
+                }
+              ],
+              "likesCount": 560,
+              "metaTagId": "58e3c0796ebb3476087d1911",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/97284/32c4be99.a.8648127-1/%%",
+              "recent": false,
+              "releaseDate": "1999-04-20T00:00:00+04:00",
+              "trackCount": 39,
+              "veryImportant": false,
+              "year": 1999,
+              "trackPosition": {
+                "volume": 1,
+                "index": 1
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/97284/32c4be99.a.8648127-1/%%",
+          "derivedColors": {
+            "average": "#a38428",
+            "waveText": "#ffefc1",
+            "miniPlayer": "#e8cf86",
+            "accent": "#debb53"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/97284/32c4be99.a.8648127-1/%%",
+          "lyricsAvailable": false,
+          "best": true,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": false,
+            "hasAvailableTextLyrics": false
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview"
+          ],
+          "mixFade": {
+            "inStart": 25.253,
+            "inStop": 30.586,
+            "outStart": 224.731,
+            "outStop": 230.065
+          }
+        },
+        "trackParameters": {
+          "bpm": 180,
+          "energy": 0.0140164755,
+          "hue": 324.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 25.253,
+            "inStop": 30.586,
+            "outStart": 224.731,
+            "outStop": 230.065
+          }
+        },
+        "type": "track"
+      },
+      {
+        "liked": false,
+        "track": {
+          "id": "4296961",
+          "realId": "4296961",
+          "title": "Звёзды 3000",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 263420,
+          "fileSize": 0,
+          "r128": {
+            "i": -10.37,
+            "tp": 0.13,
+            "importantSecs": 263
+          },
+          "fade": {
+            "inStart": 0.1,
+            "inStop": 5.1,
+            "outStart": 254.5,
+            "outStop": 257.1
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "e7436836.p.41051/",
+                "uri": "avatars.yandex.net/get-music-content/32236/e7436836.p.41051/%%",
+                "type": "from-artist-photos"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 41051,
+              "name": "Смысловые Галлюцинации",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 22151658,
+              "title": "Мысленный волк. Лучшее (2000-2014)",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "e7436836.p.41051/",
+                    "uri": "avatars.yandex.net/get-music-content/32236/e7436836.p.41051/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 41051,
+                  "name": "Смысловые Галлюцинации",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                4296961,
+                4296982,
+                4296952
+              ],
+              "childContent": false,
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/5966316/ed17054d.a.22151658-1/%%",
+                "derivedColors": {
+                  "average": "#7ea8b3",
+                  "waveText": "#c1f1ff",
+                  "miniPlayer": "#a5c2ca",
+                  "accent": "#7ea8b3"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/5966316/ed17054d.a.22151658-1/%%",
+              "derivedColors": {
+                "average": "#7ea8b3",
+                "waveText": "#c1f1ff",
+                "miniPlayer": "#a5c2ca",
+                "accent": "#7ea8b3"
+              },
+              "disclaimers": [],
+              "genre": "rusrock",
+              "labels": [
+                {
+                  "id": 490803,
+                  "name": "Первое музыкальное"
+                }
+              ],
+              "likesCount": 2869,
+              "metaTagId": "58e3c0796ebb3476087d1920",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/5966316/ed17054d.a.22151658-1/%%",
+              "recent": false,
+              "releaseDate": "2014-08-26T00:00:00+04:00",
+              "trackCount": 25,
+              "veryImportant": false,
+              "year": 2014,
+              "trackPosition": {
+                "volume": 1,
+                "index": 3
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/5966316/ed17054d.a.22151658-1/%%",
+          "derivedColors": {
+            "average": "#6ba8c6",
+            "waveText": "#c1eaff",
+            "miniPlayer": "#97c2d7",
+            "accent": "#6ba8c6"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/5966316/ed17054d.a.22151658-1/%%",
+          "lyricsAvailable": false,
+          "best": true,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": true,
+            "hasAvailableTextLyrics": true
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview",
+            "karaoke"
+          ],
+          "mixFade": {
+            "inStart": 40.099,
+            "inStop": 45.813,
+            "outStart": 225.792,
+            "outStop": 231.506
+          }
+        },
+        "trackParameters": {
+          "bpm": 168,
+          "energy": 0.51943856,
+          "hue": 121.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 40.099,
+            "inStop": 45.813,
+            "outStart": 225.792,
+            "outStop": 231.506
+          }
+        },
+        "type": "track"
+      }
+    ],
+    "terminated": false,
+    "unknownSession": false,
+    "offlineRecommenderData": []
+  },
+  "invocationInfo": {
+    "hostname": "scrubbed",
+    "req-id": "scrubbed",
+    "app-name": "music-wave",
+    "exec-duration-millis": 539
+  }
+}

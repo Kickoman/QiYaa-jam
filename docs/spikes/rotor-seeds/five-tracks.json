@@ -1,0 +1,897 @@
+{
+  "result": {
+    "acceptedSeeds": [
+      {
+        "tag": "560473",
+        "type": "track",
+        "value": "560473"
+      },
+      {
+        "tag": "1695498",
+        "type": "track",
+        "value": "1695498"
+      },
+      {
+        "tag": "28123186",
+        "type": "track",
+        "value": "28123186"
+      },
+      {
+        "tag": "38633712",
+        "type": "track",
+        "value": "38633712"
+      },
+      {
+        "tag": "39089632",
+        "type": "track",
+        "value": "39089632"
+      }
+    ],
+    "batchId": "B-scrubbed",
+    "descriptionSeed": {
+      "tag": "39089632",
+      "type": "track",
+      "value": "39089632"
+    },
+    "pumpkin": false,
+    "radioSessionId": "S-scrubbed",
+    "sequence": [
+      {
+        "liked": false,
+        "track": {
+          "id": "33792663",
+          "realId": "33792663",
+          "title": "Время, назад!",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 252290,
+          "fileSize": 0,
+          "r128": {
+            "i": -8.05,
+            "tp": 0.97,
+            "importantSecs": 252
+          },
+          "fade": {
+            "inStart": 0.4,
+            "inStop": 1.5,
+            "outStart": 244.0,
+            "outStop": 249.0
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "44715161.p.161243/",
+                "uri": "avatars.yandex.net/get-music-content/19035207/44715161.p.161243/%%",
+                "type": "from-artist-photos"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 161243,
+              "name": "Сплин",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 11057711,
+              "title": "Новые люди",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "44715161.p.161243/",
+                    "uri": "avatars.yandex.net/get-music-content/19035207/44715161.p.161243/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 161243,
+                  "name": "Сплин",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                33792663,
+                33792661,
+                33792664
+              ],
+              "childContent": false,
+              "contentWarning": "explicit",
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/2433207/0130978f.a.11057711-1/%%",
+                "derivedColors": {
+                  "average": "#715a48",
+                  "waveText": "#ffdbc1",
+                  "miniPlayer": "#c6b5a8",
+                  "accent": "#ae9583"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/2433207/0130978f.a.11057711-1/%%",
+              "derivedColors": {
+                "average": "#715a48",
+                "waveText": "#ffdbc1",
+                "miniPlayer": "#c6b5a8",
+                "accent": "#ae9583"
+              },
+              "disclaimers": [
+                "descriptionText:67370c8e13b92b0a60256675"
+              ],
+              "genre": "rusrock",
+              "labels": [
+                {
+                  "id": 938531,
+                  "name": "ООО Сплин"
+                }
+              ],
+              "likesCount": 6820,
+              "metaTagId": "58e3c0796ebb3476087d1920",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/2433207/0130978f.a.11057711-1/%%",
+              "recent": false,
+              "releaseDate": "2003-02-10T00:00:00+03:00",
+              "trackCount": 11,
+              "veryImportant": false,
+              "year": 2003,
+              "trackPosition": {
+                "volume": 1,
+                "index": 2
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/2433207/0130978f.a.11057711-1/%%",
+          "derivedColors": {
+            "average": "#715a48",
+            "waveText": "#ffdbc1",
+            "miniPlayer": "#c6b5a8",
+            "accent": "#ae9583"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/2433207/0130978f.a.11057711-1/%%",
+          "lyricsAvailable": false,
+          "best": true,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": false,
+            "hasAvailableTextLyrics": false
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview"
+          ],
+          "mixFade": {
+            "inStart": 46.535,
+            "inStop": 53.919,
+            "outStart": 229.282,
+            "outStop": 236.666
+          }
+        },
+        "trackParameters": {
+          "bpm": 130,
+          "energy": 0.82818824,
+          "hue": 81.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 46.535,
+            "inStop": 53.919,
+            "outStart": 229.282,
+            "outStop": 236.666
+          }
+        },
+        "type": "track"
+      },
+      {
+        "liked": false,
+        "track": {
+          "id": "38634574",
+          "realId": "38634574",
+          "title": "Невесёлая песня",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 255960,
+          "fileSize": 0,
+          "r128": {
+            "i": -15.11,
+            "tp": -1.09,
+            "importantSecs": 255
+          },
+          "fade": {
+            "inStart": 0.2,
+            "inStop": 1.5,
+            "outStart": 249.8,
+            "outStop": 253.6
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "c6d507c7.p.41075/",
+                "uri": "avatars.yandex.net/get-music-content/33216/c6d507c7.p.41075/%%",
+                "type": "from-artist-photos"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 41075,
+              "name": "КИНО",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 10030,
+              "title": "Звезда по имени Солнце",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "c6d507c7.p.41075/",
+                    "uri": "avatars.yandex.net/get-music-content/33216/c6d507c7.p.41075/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 41075,
+                  "name": "КИНО",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                38634573,
+                38634578
+              ],
+              "childContent": false,
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/5853241/bc8002a7.a.10030-10/%%",
+                "derivedColors": {
+                  "average": "#1e1e1e",
+                  "waveText": "#e0e0e0",
+                  "miniPlayer": "#b7b7b7",
+                  "accent": "#999999"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/5853241/bc8002a7.a.10030-10/%%",
+              "derivedColors": {
+                "average": "#1e1e1e",
+                "waveText": "#e0e0e0",
+                "miniPlayer": "#b7b7b7",
+                "accent": "#999999"
+              },
+              "disclaimers": [],
+              "genre": "rusrock",
+              "labels": [
+                {
+                  "id": 5468362,
+                  "name": "Цой В.Р. (наследники)"
+                }
+              ],
+              "likesCount": 91831,
+              "metaTagId": "58e3c0796ebb3476087d1920",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/5853241/bc8002a7.a.10030-10/%%",
+              "recent": false,
+              "releaseDate": "1989-08-29T00:00:00+04:00",
+              "trackCount": 9,
+              "veryImportant": false,
+              "year": 1989,
+              "trackPosition": {
+                "volume": 1,
+                "index": 3
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/5853241/bc8002a7.a.10030-10/%%",
+          "derivedColors": {
+            "average": "#1e1e1e",
+            "waveText": "#e0e0e0",
+            "miniPlayer": "#b7b7b7",
+            "accent": "#999999"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/5853241/bc8002a7.a.10030-10/%%",
+          "lyricsAvailable": false,
+          "best": false,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": true,
+            "hasAvailableTextLyrics": true
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview",
+            "karaoke"
+          ],
+          "mixFade": {
+            "inStart": 37.934,
+            "inStop": 42.986,
+            "outStart": 226.6,
+            "outStop": 231.653
+          }
+        },
+        "trackParameters": {
+          "bpm": 95,
+          "energy": 0.43514505,
+          "hue": 178.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 37.934,
+            "inStop": 42.986,
+            "outStart": 226.6,
+            "outStop": 231.653
+          }
+        },
+        "type": "track"
+      },
+      {
+        "liked": false,
+        "track": {
+          "id": "1695487",
+          "realId": "1695487",
+          "title": "Дождь",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 304420,
+          "fileSize": 0,
+          "r128": {
+            "i": -14.34,
+            "tp": 0.22,
+            "importantSecs": 304
+          },
+          "fade": {
+            "inStart": 0.2,
+            "inStop": 1.5,
+            "outStart": 296.5,
+            "outStop": 300.7
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "66b91a87.p.358612/",
+                "uri": "avatars.yandex.net/get-music-content/5413882/66b91a87.p.358612/%%",
+                "type": "from-artist-photos"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 358612,
+              "name": "ДДТ",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 168137,
+              "title": "Актриса Весна",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "66b91a87.p.358612/",
+                    "uri": "avatars.yandex.net/get-music-content/5413882/66b91a87.p.358612/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 358612,
+                  "name": "ДДТ",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                1695498,
+                1695487
+              ],
+              "childContent": false,
+              "contentWarning": "explicit",
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/34131/73fed284.a.168137-2/%%",
+                "derivedColors": {
+                  "average": "#999999",
+                  "waveText": "#e0e0e0",
+                  "miniPlayer": "#b7b7b7",
+                  "accent": "#999999"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/34131/73fed284.a.168137-2/%%",
+              "derivedColors": {
+                "average": "#999999",
+                "waveText": "#e0e0e0",
+                "miniPlayer": "#b7b7b7",
+                "accent": "#999999"
+              },
+              "disclaimers": [
+                "descriptionText:67370c8e13b92b0a60256675"
+              ],
+              "genre": "rusrock",
+              "labels": [
+                {
+                  "id": 3065062,
+                  "name": "Ю.Ю. Шевчук / Navigator Records"
+                }
+              ],
+              "likesCount": 26576,
+              "metaTagId": "58e3c0796ebb3476087d1920",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/34131/73fed284.a.168137-2/%%",
+              "recent": false,
+              "trackCount": 10,
+              "veryImportant": false,
+              "year": 1992,
+              "trackPosition": {
+                "volume": 1,
+                "index": 1
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/34131/73fed284.a.168137-2/%%",
+          "derivedColors": {
+            "average": "#999999",
+            "waveText": "#e0e0e0",
+            "miniPlayer": "#b7b7b7",
+            "accent": "#999999"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/34131/73fed284.a.168137-2/%%",
+          "lyricsAvailable": true,
+          "best": true,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": true,
+            "hasAvailableTextLyrics": true
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview",
+            "karaoke"
+          ],
+          "mixFade": {
+            "inStart": 183.746,
+            "inStop": 191.426,
+            "outStart": 245.426,
+            "outStop": 253.106
+          }
+        },
+        "trackParameters": {
+          "bpm": 125,
+          "energy": 0.1902569,
+          "hue": 250.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 183.746,
+            "inStop": 191.426,
+            "outStart": 245.426,
+            "outStop": 253.106
+          }
+        },
+        "type": "track"
+      },
+      {
+        "liked": false,
+        "track": {
+          "id": "30049844",
+          "realId": "30049844",
+          "title": "Хрустальный мир",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 255000,
+          "fileSize": 0,
+          "r128": {
+            "i": -7.31,
+            "tp": 1.69,
+            "importantSecs": 255
+          },
+          "fade": {
+            "inStart": 0.3,
+            "inStop": 1.5,
+            "outStart": 247.4,
+            "outStop": 252.4
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "1e9f735a.p.41154/",
+                "uri": "avatars.yandex.net/get-music-content/2357076/1e9f735a.p.41154/%%",
+                "type": "from-artist-photos"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 41154,
+              "name": "Кукрыниксы",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 3626361,
+              "title": "Myself",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "1e9f735a.p.41154/",
+                    "uri": "avatars.yandex.net/get-music-content/2357076/1e9f735a.p.41154/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 41154,
+                  "name": "Кукрыниксы",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                30049849,
+                30049844,
+                30049845
+              ],
+              "childContent": false,
+              "contentWarning": "explicit",
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/38044/33e6e16d.a.3626361-1/%%",
+                "derivedColors": {
+                  "average": "#1d221b",
+                  "waveText": "#daffc1",
+                  "miniPlayer": "#b6bfaf",
+                  "accent": "#96a48d"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/38044/33e6e16d.a.3626361-1/%%",
+              "derivedColors": {
+                "average": "#1d221b",
+                "waveText": "#daffc1",
+                "miniPlayer": "#b6bfaf",
+                "accent": "#96a48d"
+              },
+              "disclaimers": [
+                "descriptionText:67370c8e13b92b0a60256675"
+              ],
+              "genre": "postpunk",
+              "labels": [
+                {
+                  "id": 35880,
+                  "name": "Союз Мьюзик"
+                }
+              ],
+              "likesCount": 6234,
+              "metaTagId": "6346731a8d37dd25833c8255",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/38044/33e6e16d.a.3626361-1/%%",
+              "recent": false,
+              "releaseDate": "2012-07-08T00:00:00+04:00",
+              "trackCount": 11,
+              "veryImportant": false,
+              "year": 2012,
+              "trackPosition": {
+                "volume": 1,
+                "index": 4
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/38044/33e6e16d.a.3626361-1/%%",
+          "derivedColors": {
+            "average": "#1d221b",
+            "waveText": "#daffc1",
+            "miniPlayer": "#b6bfaf",
+            "accent": "#96a48d"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/38044/33e6e16d.a.3626361-1/%%",
+          "lyricsAvailable": false,
+          "best": true,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": true,
+            "hasAvailableTextLyrics": true
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview",
+            "karaoke"
+          ],
+          "mixFade": {
+            "inStart": 14.913,
+            "inStop": 19.573,
+            "outStart": 238.553,
+            "outStop": 243.213
+          }
+        },
+        "trackParameters": {
+          "bpm": 103,
+          "energy": 0.80113435,
+          "hue": 172.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 14.913,
+            "inStop": 19.573,
+            "outStart": 238.553,
+            "outStop": 243.213
+          }
+        },
+        "type": "track"
+      },
+      {
+        "liked": false,
+        "track": {
+          "id": "26219954",
+          "realId": "26219954",
+          "title": "Тутанхамон",
+          "major": {
+            "id": 0,
+            "name": "-"
+          },
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [
+            "bookmate"
+          ],
+          "storageDir": "",
+          "durationMs": 291340,
+          "fileSize": 0,
+          "r128": {
+            "i": -12.11,
+            "tp": 0.56,
+            "importantSecs": 291
+          },
+          "fade": {
+            "inStart": 0.4,
+            "inStop": 4.6,
+            "outStart": 282.7,
+            "outStop": 286.2
+          },
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "available": true,
+              "composer": false,
+              "cover": {
+                "prefix": "13a885c8.p.41138/",
+                "uri": "avatars.yandex.net/get-music-content/119639/13a885c8.p.41138/%%",
+                "type": "from-artist-photos"
+              },
+              "cutoutCover": {
+                "uri": "avatars.yandex.net/get-music-content/17659805/f2dd8809.c.1034162/%%"
+              },
+              "disclaimers": [],
+              "genres": [],
+              "id": 41138,
+              "name": "Nautilus Pompilius",
+              "various": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 3113823,
+              "title": "Серебряный век",
+              "artists": [
+                {
+                  "available": true,
+                  "composer": false,
+                  "cover": {
+                    "prefix": "13a885c8.p.41138/",
+                    "uri": "avatars.yandex.net/get-music-content/119639/13a885c8.p.41138/%%",
+                    "type": "from-artist-photos"
+                  },
+                  "cutoutCover": {
+                    "uri": "avatars.yandex.net/get-music-content/17659805/f2dd8809.c.1034162/%%"
+                  },
+                  "disclaimers": [],
+                  "genres": [],
+                  "id": 41138,
+                  "name": "Nautilus Pompilius",
+                  "various": false
+                }
+              ],
+              "available": true,
+              "availableForMobile": true,
+              "availableForOptions": [
+                "bookmate"
+              ],
+              "availableForPremiumUsers": true,
+              "availablePartially": false,
+              "bests": [
+                6024175,
+                6024130,
+                6024128
+              ],
+              "childContent": false,
+              "contentWarning": "explicit",
+              "cover": {
+                "uri": "avatars.yandex.net/get-music-content/49876/b25ac9ea.a.3113823-1/%%",
+                "derivedColors": {
+                  "average": "#1e1e1e",
+                  "waveText": "#e0e0e0",
+                  "miniPlayer": "#b7b7b7",
+                  "accent": "#999999"
+                }
+              },
+              "coverUri": "avatars.yandex.net/get-music-content/49876/b25ac9ea.a.3113823-1/%%",
+              "derivedColors": {
+                "average": "#1e1e1e",
+                "waveText": "#e0e0e0",
+                "miniPlayer": "#b7b7b7",
+                "accent": "#999999"
+              },
+              "disclaimers": [
+                "descriptionText:67370c8e13b92b0a60256675"
+              ],
+              "genre": "rusrock",
+              "labels": [
+                {
+                  "id": 490803,
+                  "name": "Первое музыкальное"
+                }
+              ],
+              "likesCount": 44355,
+              "metaTagId": "58e3c0796ebb3476087d1920",
+              "metaType": "music",
+              "ogImage": "avatars.yandex.net/get-music-content/49876/b25ac9ea.a.3113823-1/%%",
+              "recent": false,
+              "releaseDate": "2015-12-18T00:00:00+03:00",
+              "trackCount": 25,
+              "veryImportant": false,
+              "year": 2015,
+              "trackPosition": {
+                "volume": 1,
+                "index": 6
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/49876/b25ac9ea.a.3113823-1/%%",
+          "derivedColors": {
+            "average": "#1e1e1e",
+            "waveText": "#e0e0e0",
+            "miniPlayer": "#b7b7b7",
+            "accent": "#999999"
+          },
+          "ogImage": "avatars.yandex.net/get-music-content/49876/b25ac9ea.a.3113823-1/%%",
+          "lyricsAvailable": false,
+          "best": false,
+          "type": "music",
+          "rememberPosition": false,
+          "trackSharingFlag": "COVER_ONLY",
+          "lyricsInfo": {
+            "hasAvailableSyncLyrics": false,
+            "hasAvailableTextLyrics": true
+          },
+          "disclaimers": [],
+          "trackSource": "OWN",
+          "specialAudioResources": [
+            "smart_preview",
+            "karaoke"
+          ],
+          "mixFade": {
+            "inStart": 4.518,
+            "inStop": 12.866,
+            "outStart": 269.625,
+            "outStop": 277.973
+          }
+        },
+        "trackParameters": {
+          "bpm": 115,
+          "energy": 0.48401672,
+          "hue": 155.0,
+          "userCollectionHue": 94,
+          "mixFade": {
+            "inStart": 4.518,
+            "inStop": 12.866,
+            "outStart": 269.625,
+            "outStop": 277.973
+          }
+        },
+        "type": "track"
+      }
+    ],
+    "terminated": false,
+    "wave": {
+      "name": "Полковнику никто не пишет · Что такое осень · Как на войне · Группа крови · Выхода нет",
+      "stationId": "track:560473",
+      "seeds": [
+        "track:560473",
+        "track:1695498",
+        "track:28123186",
+        "track:38633712",
+        "track:39089632"
+      ],
+      "idForFrom": "track-560473_track-1695498_track-28123186_track-38633712_track-39089632",
+      "type": "DEFAULT",
+      "description": "Моя волна"
+    },
+    "offlineRecommenderData": [
+      1,
+      0,
+      0
+    ],
+    "interactive": true
+  },
+  "invocationInfo": {
+    "hostname": "scrubbed",
+    "req-id": "scrubbed",
+    "app-name": "music-wave",
+    "exec-duration-millis": 384
+  }
+}

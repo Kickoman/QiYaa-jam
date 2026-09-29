@@ -1,0 +1,33 @@
+# nginx site for the jam server. Replace jam.example.org; the certificate comes from
+# `certbot --nginx -d jam.example.org`, which also adds the port-80 redirect.
+# Until the subdomain exists, the same block works on another port of an existing domain:
+# `listen 8443 ssl;`, that domain's certificate, and `ufw allow 8443/tcp`.
+
+server {
+    listen 443 ssl;
+    server_name jam.example.org;
+
+    ssl_certificate /etc/letsencrypt/live/jam.example.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/jam.example.org/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    client_max_body_size 64k;
+
+    location /ws {
+        proxy_pass http://127.0.0.1:8090;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 1h;
+        proxy_send_timeout 1h;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8090;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}

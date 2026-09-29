@@ -1,0 +1,9 @@
+{
+  "name": "qiyaa-jam-echo",
+  "private": true,
+  "type": "module",
+  "description": "Throwaway WebSocket echo for the VPS spike (Kickoman/QiYaa-jam#2)",
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

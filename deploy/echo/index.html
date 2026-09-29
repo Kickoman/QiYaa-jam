@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jam echo</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 16px; background: #111; color: #ddd; font: 15px/1.4 ui-monospace, monospace; }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #222; }
+  .value { color: #fff; text-align: right; }
+  .open { color: #6f6; } .closed { color: #f66; }
+  button { margin: 12px 8px 0 0; padding: 12px 16px; font: inherit; background: #222; color: #fff; border: 1px solid #444; border-radius: 6px; }
+  ol { padding-left: 20px; font-size: 13px; color: #aaa; }
+</style>
+</head>
+<body>
+<h1>Jam: проверка WebSocket</h1>
+<div class="row"><span>Состояние</span><span class="value" id="state">—</span></div>
+<div class="row"><span>Соединение живёт</span><span class="value" id="age">—</span></div>
+<div class="row"><span>Сервер видит IP</span><span class="value" id="ip">—</span></div>
+<div class="row"><span>Переподключений</span><span class="value" id="reconnects">0</span></div>
+<div class="row"><span>Эхо, мс</span><span class="value" id="rtt">—</span></div>
+<button id="send">Отправить эхо</button>
+<button id="wake">Не гасить экран</button>
+<ol id="events" reversed></ol>
+<script>
+  const url = (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws";
+  const byId = (id) => document.getElementById(id);
+  let socket = null;
+  let openedAt = 0;
+  let reconnects = 0;
+  let delayS = 1;
+  let retryTimer = 0;
+
+  function note(text) {
+    const item = document.createElement("li");
+    item.textContent = new Date().toLocaleTimeString() + "  " + text;
+    byId("events").prepend(item);
+  }
+
+  function minutes(ms) {
+    const seconds = Math.floor(ms / 1000);
+    return Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
+  }
+
+  function connect() {
+    clearTimeout(retryTimer);
+    if (socket && socket.readyState <= WebSocket.OPEN) return;
+    byId("state").textContent = "подключаюсь…";
+    byId("state").className = "value";
+    socket = new WebSocket(url);
+    socket.onopen = () => {
+      openedAt = Date.now();
+      delayS = 1;
+      byId("state").textContent = "открыто";
+      byId("state").className = "value open";
+      note("открыто");
+    };
+    socket.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      if (message.type === "hello") {
+        byId("ip").textContent = message.seenIp + (message.trusted ? "" : " (без прокси)");
+        note("сервер видит " + message.seenIp + ", соединение #" + message.id);
+      } else if (message.type === "echo") {
+        byId("rtt").textContent = String(Date.now() - JSON.parse(message.data).sentAt);
+      }
+    };
+    socket.onclose = (event) => {
+      const lived = openedAt ? minutes(Date.now() - openedAt) : "0:00";
+      note("закрыто: код " + event.code + (event.reason ? " «" + event.reason + "»" : "") + ", жило " + lived);
+      openedAt = 0;
+      byId("state").textContent = "закрыто, повтор через " + delayS + " с";
+      byId("state").className = "value closed";
+      retryTimer = setTimeout(() => { reconnects++; byId("reconnects").textContent = reconnects; connect(); }, delayS * 1000);
+      delayS = Math.min(delayS * 2, 30);
+    };
+  }
+
+  setInterval(() => { byId("age").textContent = openedAt ? minutes(Date.now() - openedAt) : "—"; }, 1000);
+  window.addEventListener("online", () => { note("сеть появилась"); delayS = 1; connect(); });
+  window.addEventListener("offline", () => note("сеть пропала"));
+  byId("send").onclick = () => socket && socket.readyState === WebSocket.OPEN && socket.send(JSON.stringify({ sentAt: Date.now() }));
+  byId("wake").onclick = async () => {
+    try { await navigator.wakeLock.request("screen"); note("экран не гаснет"); } catch (failed) { note("wake lock: " + failed.message); }
+  };
+  connect();
+</script>
+</body>
+</html>

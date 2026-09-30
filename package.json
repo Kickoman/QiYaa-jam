@@ -7,14 +7,16 @@
     "node": ">=22.12 <23"
   },
   "workspaces": [
-    "server"
+    "server",
+    "tools/fake-host"
   ],
   "scripts": {
     "generate": "npm run generate --workspaces --if-present",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
-    "check": "npm run generate && npm run format:check && npm run lint && npm run check --workspaces"
+    "check": "npm run generate && npm run format:check && npm run lint && npm run check --workspaces",
+    "dev": "npm run generate && npm run dev -w tools/fake-host"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -10,7 +10,7 @@
 |---|---|
 | [server/](server/README.md) | Сервер джема: Node 22, TypeScript, `ws` |
 | [deploy/](deploy/README.md) | Образ Docker, nginx, как джем живёт на VPS |
-| [tools/](tools/) | Разведка ротора; позже — имитатор хозяина |
+| [tools/fake-host/](tools/fake-host/README.md) | Имитатор хозяина и сквозные тесты; `tools/rotor-spike/` — разведка ротора |
 | [docs/](docs/design/README.md) | Проект и план (`design/`), отчёты разведок (`spikes/`), [код-стайл](docs/code-style.md) |
 | `spec/` | Подмодуль [QiYaa-spec](https://github.com/Kickoman/QiYaa-spec): протокол, лимиты и сценарии в `spec/jam/` |
 
@@ -23,7 +23,7 @@ git clone --recurse-submodules git@github.com:Kickoman/QiYaa-jam.git
 cd QiYaa-jam
 npm ci
 npm run check                      # формат, линтер, генерация, типы, тесты, сборка
-PORT=8090 npm start -w server      # после check: сервер на :8090, GET /healthz → ok
+npm run dev                        # сервер на :8090 и имитатор хозяина: ссылка и QR в терминале
 ```
 
 Нужен Node 22 (`.node-version`). Правила для изменений — [CLAUDE.md](CLAUDE.md).

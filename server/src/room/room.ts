@@ -17,6 +17,8 @@ import {
   KICKED_REMEMBERED,
   QUEUE_LENGTH,
   RECENT_ITEMS,
+  ROOM_MAX_AGE_MS,
+  ROOM_WITHOUT_HOST_MS,
   SEARCH_CACHE_MS,
   SEARCH_CACHE_TRACKS,
 } from "./limits.js";
@@ -88,6 +90,7 @@ export function createRoom(create: CreateRoom, context: RoomContext): Outcome {
     fallback: { seeds: [], seedsVersion: 0 },
     searchCache: new Map(),
     pending: [],
+    hostLeftAt: null,
   };
   const created: ServerMessage = {
     type: "created",
@@ -627,7 +630,38 @@ function onJoin(
   });
 }
 
-function onDisconnected(room: RoomState, publicId: string): Outcome {
+function onResume(
+  room: RoomState,
+  event: Extract<RoomEvent, { kind: "resume" }>,
+  context: RoomContext,
+): Outcome {
+  if (hashSecret(event.hostSecret) !== room.hostSecretHash) {
+    return refuse(room, event.connection, event.id, "bad-secret");
+  }
+  let after: RoomState = {
+    ...withParticipant(room, room.hostPublicId, (host) => ({
+      ...host,
+      connections: host.connections + 1,
+    })),
+    hostLeftAt: null,
+  };
+  for (const started of event.outbox) {
+    after = startItem(after, started.itemId, context.now) ?? after;
+  }
+  return changed(room, after, [
+    { kind: "admit", connection: event.connection, publicId: room.hostPublicId },
+    send(event.connection, { type: "resumed", id: event.id, restored: event.restored }),
+  ]);
+}
+
+export function isExpired(room: RoomState, now: number): boolean {
+  return (
+    now - room.createdAt >= ROOM_MAX_AGE_MS ||
+    (room.hostLeftAt !== null && now - room.hostLeftAt >= ROOM_WITHOUT_HOST_MS)
+  );
+}
+
+function onDisconnected(room: RoomState, publicId: string, now: number): Outcome {
   const participant = room.participants.find((candidate) => candidate.publicId === publicId);
   if (!participant || participant.connections === 0) {
     return unchanged(room);
@@ -645,7 +679,7 @@ function onDisconnected(room: RoomState, publicId: string): Outcome {
   const failed = after.pending.map((pending) =>
     send(pending.connection, rejected(pending.id, "host-offline")),
   );
-  return changed(room, { ...after, pending: [] }, failed);
+  return changed(room, { ...after, pending: [], hostLeftAt: now }, failed);
 }
 
 export function reduce(room: RoomState, event: RoomEvent, context: RoomContext): Outcome {
@@ -653,7 +687,13 @@ export function reduce(room: RoomState, event: RoomEvent, context: RoomContext):
     case "join":
       return onJoin(room, event, context);
     case "disconnected":
-      return onDisconnected(room, event.publicId);
+      return onDisconnected(room, event.publicId, context.now);
+    case "resume":
+      return onResume(room, event, context);
+    case "tick":
+      return isExpired(room, context.now)
+        ? { room: null, effects: [{ kind: "end", reason: "expired" }] }
+        : unchanged(room);
     case "message":
       return onMessage(room, event, context);
     case "timeout": {

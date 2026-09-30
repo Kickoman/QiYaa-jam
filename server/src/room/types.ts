@@ -63,6 +63,7 @@ export type RoomState = {
   readonly fallback: Fallback;
   readonly searchCache: ReadonlyMap<string, readonly CachedTrack[]>;
   readonly pending: readonly PendingRequest[];
+  readonly hostLeftAt: number | null;
 };
 
 export type RoomContext = { readonly now: number; readonly publicUrl: string };
@@ -88,7 +89,16 @@ export type RoomEvent =
       readonly message: ClientMessage;
       readonly fresh: Fresh;
     }
-  | { readonly kind: "timeout"; readonly requestId: string };
+  | {
+      readonly kind: "resume";
+      readonly connection: string;
+      readonly id: string;
+      readonly hostSecret: string;
+      readonly outbox: readonly { readonly itemId: string }[];
+      readonly restored: boolean;
+    }
+  | { readonly kind: "timeout"; readonly requestId: string }
+  | { readonly kind: "tick" };
 
 export type Effect =
   | { readonly kind: "send"; readonly connection: string; readonly message: ServerMessage }

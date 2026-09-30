@@ -3,7 +3,7 @@
 Держит комнаты джема в памяти: участников, очередь, порядок, права и лимиты. Говорит с хозяином и
 гостями по протоколу из `spec/jam/protocol`, отдаёт веб-гостя и `/healthz`. Звук и токен Яндекса
 сюда не приходят: поиск и проверку треков сервер только пересылает хозяину. Готовы протокол,
-комната, сеть с WebSocket и ключи хозяина; снимки и восстановление — Kickoman/QiYaa-jam#10.
+комната, сеть с WebSocket, ключи хозяина, снимки и восстановление после перезапуска.
 
 | Файл или папка | Что там |
 |---|---|
@@ -42,7 +42,7 @@ grep -rlnE 'from "(ws|node:net|node:http)"' server/src/room/   # должно н
 | `PORT` | `8090` | Порт; не число от 0 до 65535 — ошибка при запуске |
 | `PUBLIC_URL` | `http://localhost:<PORT>` | Внешний адрес: из него `joinUrl` и единственный разрешённый `Origin` |
 | `TRUSTED_PROXY` | `127.0.0.1` | Через запятую: от кого верить `X-Real-IP` |
-| `DATA_DIR` | `/data` | Где `host-keys.json` |
+| `DATA_DIR` | `/data` | Где `host-keys.json` и `rooms.json` (комнаты на время перезапуска) |
 | `ASSETLINKS_JSON` | нет | Тело `/.well-known/assetlinks.json` для Android App Links; не JSON — ошибка при запуске |
 | `WEB_ROOT` | нет | Папка собранного веб-гостя; без неё `/` и `/j/…` отвечают 404 |
 
@@ -59,8 +59,9 @@ function log(event: string, fields?: LogFields): void;   // {"time", "event", ..
 
 ## `src/main.ts`
 
-По SIGTERM сервер закрывает соединения с 1001 и выходит с кодом 0. Docker шлёт именно SIGTERM
-(`STOPSIGNAL` в `deploy/Dockerfile`). Сохранение комнат при остановке добавит Kickoman/QiYaa-jam#10.
+По SIGTERM сервер пишет комнаты в `DATA_DIR/rooms.json`, закрывает соединения с 1001 и выходит с
+кодом 0; при запуске читает этот файл и удаляет его (REC-10). Docker шлёт именно SIGTERM
+(`STOPSIGNAL` в `deploy/Dockerfile`), а `stop_grace_period` в compose должен оставить на это время.
 SIGHUP перечитывает `host-keys.json`; сервер замечает изменение файла и сам, при следующей проверке
 ключа.
 

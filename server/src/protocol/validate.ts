@@ -5,7 +5,7 @@ import {
   schemas,
   serverMessageTypes,
 } from "./generated/schemas.js";
-import type { ClientMessage, ServerMessage } from "./generated/types.js";
+import type { ClientMessage, ServerMessage, SnapshotData } from "./generated/types.js";
 
 export type ClientMessageType = (typeof clientMessageTypes)[number];
 
@@ -32,6 +32,7 @@ const clientValidators = new Map<string, ValidateFunction>(
   clientMessageTypes.map((type) => [type, compiled(`messages/${type}.schema.json`)]),
 );
 const anyServerMessage = compiled("server-message.schema.json");
+const snapshotData = compiled("snapshot-data.schema.json");
 const requestIdPattern = /^[A-Za-z0-9_-]{1,36}$/;
 
 function isClientMessageType(type: unknown): type is ClientMessageType {
@@ -62,6 +63,10 @@ export function parseClientMessage(text: string): ParsedClientMessage {
 
 export function isServerMessage(value: unknown): value is ServerMessage {
   return anyServerMessage(value);
+}
+
+export function isSnapshotData(value: unknown): value is SnapshotData {
+  return snapshotData(value);
 }
 
 export { clientMessageTypes, serverMessageTypes };

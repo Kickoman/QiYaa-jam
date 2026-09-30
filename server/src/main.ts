@@ -16,12 +16,14 @@ const assetlinksJson = environment.ASSETLINKS_JSON ?? null;
 if (assetlinksJson !== null) {
   JSON.parse(assetlinksJson);
 }
-const hostKeys = new HostKeys(join(environment.DATA_DIR ?? "/data", "host-keys.json"));
+const dataDir = environment.DATA_DIR ?? "/data";
+const hostKeys = new HostKeys(join(dataDir, "host-keys.json"));
 
 const server = new JamServer({
   publicUrl,
   trustedProxies: parseTrustedProxies(environment.TRUSTED_PROXY),
   hostKeys,
+  roomsFile: join(dataDir, "rooms.json"),
   assetlinksJson,
   webRoot: environment.WEB_ROOT ?? null,
 });

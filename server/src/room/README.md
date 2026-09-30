@@ -3,9 +3,8 @@
 Правила комнаты из `spec/jam/room.md`, `ordering/` и `seeds.md` в виде чистых функций. На вход —
 текущая комната, событие и время. На выход — новая комната и список эффектов: что отправить, кому,
 когда разбудить. Сокетов, таймеров, часов и случайности здесь нет: время приходит в `context.now`,
-новые id и секреты — в самом событии. Соединения, лимиты на IP и частоту, рукопожатие и реестр
-комнат — в `src/net/` (Kickoman/QiYaa-jam#8). Снимки, `resume` и истечение комнат —
-Kickoman/QiYaa-jam#10.
+новые id и секреты — в самом событии. Соединения, лимиты на IP и частоту, рукопожатие, реестр
+комнат, частота снимков и файл комнат — в [`src/net/`](../net/README.md).
 
 | Файл | Что там |
 |---|---|
@@ -13,6 +12,7 @@ Kickoman/QiYaa-jam#10.
 | `room.ts` | `createRoom`, `reduce`, `joinUrl`, `isHostOnline`, `isPublicIdFree` |
 | `ordering.ts` | `orderQueue` — порядок очереди по `spec/jam/ordering` |
 | `seeds.ts` | `pickSeeds`, `nextFallback` — сиды волны по `spec/jam/seeds.md` |
+| `snapshot.ts` | `toSnapshot`, `fromSnapshot`, `snapshotProblem` — снимок комнаты по `recovery.md` |
 | `view.ts` | `stateFor`, `roomFor`, `orderedQueue` — `state` для одного участника |
 | `limits.ts` | Все числа из `spec/jam/limits.md` |
 | `secrets.ts` | `hashSecret` — SHA-256 в hex |
@@ -30,6 +30,7 @@ function createRoom(create: CreateRoom, context: RoomContext): Outcome;
 function reduce(room: RoomState, event: RoomEvent, context: RoomContext): Outcome;
 function joinUrl(publicUrl: string, roomId: string, joinSecret: string): string;
 function isHostOnline(room: RoomState): boolean;
+function isExpired(room: RoomState, now: number): boolean;
 function isPublicIdFree(room: RoomState, publicId: string): boolean;
 
 type RoomContext = { now: number; publicUrl: string };
@@ -43,7 +44,9 @@ type Outcome = { room: RoomState | null; effects: readonly Effect[] };   // room
 | `join` | соединение без роли прислало `join` | `connection`, `id`, `participantId`, `joinSecret`, `name`, `participantKind` (`web`/`qiyaa` из `hello.app`), `newPublicId` — свободный (`isPublicIdFree`) |
 | `disconnected` | закрылось соединение участника | `publicId` |
 | `message` | участник прислал проверенное схемой сообщение | `connection`, `from`, `message`, `fresh: {requestId, joinSecret}` — новые случайные значения на каждое сообщение |
+| `resume` | хозяин прислал `resume` с действующим ключом; комната живая или только что поднята из снимка | `connection`, `id`, `hostSecret`, `outbox`, `restored` |
 | `timeout` | наступило время из эффекта `timer` | `requestId` |
+| `tick` | периодически, раз в `PING_INTERVAL_MS` | — |
 
 Эффекты (`Effect`) идут в том порядке, в каком `net` должен их выполнить:
 
@@ -76,6 +79,26 @@ type Outcome = { room: RoomState | null; effects: readonly Effect[] };   // room
   после восстановления гость ищет заново.
 - Когда хозяин уходит, все запросы к нему сразу получают `host-offline`, не дожидаясь тайм-аута.
 - Лимиты частоты (`add`, `search`) проверяет `net`, а не комната.
+- `resume` проверяет только секрет хозяина. Действует ли ключ и можно ли поднять комнату из снимка,
+  решает `net` до события.
+- `tick` заканчивает комнату (`end{expired}`), когда хозяина нет `ROOM_WITHOUT_HOST_MS` (REC-05) или
+  ей `ROOM_MAX_AGE_MS` (ROOM-53). `hostLeftAt` ставится, когда закрывается последнее соединение
+  хозяина, и сбрасывается при `resume`.
+
+## `snapshot.ts`
+
+```ts
+function toSnapshot(room: RoomState): SnapshotData;                     // {format: 1, room}, секреты — хэшами
+function snapshotProblem(data: SnapshotData, now: number): string | null;   // null — можно поднимать
+function fromSnapshot(data: SnapshotData, now: number): RoomState;
+```
+
+- `toSnapshot` проходит схему `snapshot-data` и не содержит секретов — это проверяет тест.
+- `snapshotProblem` ловит то, что схема не видит: комната старше `ROOM_MAX_AGE_MS` (REC-07), не
+  ровно один хозяин, повтор `publicId` или `itemId`, `itemId` не меньше `nextItemNumber`.
+- `fromSnapshot`: все участники не в сети, `hostLeftAt` = `now`, кэш поиска и запросы к хозяину
+  пустые. Сиды пересчитываются, `seedsVersion` растёт, только если набор другой (SEED-10).
+- Файл комнат при плановом перезапуске (`net/persistence.ts`) хранит те же снимки.
 
 ## `ordering.ts`
 

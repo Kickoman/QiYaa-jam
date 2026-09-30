@@ -8,9 +8,10 @@ import type {
   CreateMessage,
   JoinMessage,
   RejectedMessage,
+  ResumeMessage,
   ServerMessage,
 } from "../protocol/generated/types.js";
-import { parseClientMessage } from "../protocol/validate.js";
+import { isSnapshotData, parseClientMessage } from "../protocol/validate.js";
 import {
   BAN_MS,
   DEAD_AFTER_MS,
@@ -24,14 +25,18 @@ import {
   PING_INTERVAL_MS,
   RATE_WINDOW_MS,
   ROOMS_PER_SERVER,
+  SNAPSHOT_INTERVAL_MS,
   VIOLATIONS_BEFORE_BAN,
   WEB_GUEST_SEARCHES_PER_MINUTE,
 } from "../room/limits.js";
 import { createRoom, isPublicIdFree, reduce } from "../room/room.js";
+import { hashSecret } from "../room/secrets.js";
+import { fromSnapshot, snapshotProblem, toSnapshot } from "../room/snapshot.js";
 import type { Outcome, RoomContext, RoomEvent, RoomState } from "../room/types.js";
 import { stateFor } from "../room/view.js";
 import { createHttpServer, type HttpOptions } from "./http.js";
 import { ids } from "./ids.js";
+import { saveRooms, takeRooms } from "./persistence.js";
 import { RateLimiter, Violations } from "./rate-limit.js";
 import { clientIp } from "./real-ip.js";
 
@@ -43,12 +48,14 @@ export type Timing = {
   readonly handshakeMs: number;
   readonly pingIntervalMs: number;
   readonly deadAfterMs: number;
+  readonly snapshotIntervalMs: number;
 };
 
 export type JamServerOptions = HttpOptions & {
   readonly publicUrl: string;
   readonly trustedProxies: ReadonlySet<string>;
   readonly hostKeys: HostKeyCheck;
+  readonly roomsFile?: string | null;
   readonly now?: () => number;
   readonly timing?: Partial<Timing>;
 };
@@ -60,6 +67,7 @@ class Connection {
   roomId: string | null = null;
   publicId: string | null = null;
   host = false;
+  replaced = false;
   handshake: NodeJS.Timeout | undefined;
 
   constructor(
@@ -80,7 +88,7 @@ class Connection {
   }
 
   send(message: ServerMessage): void {
-    if (this.socket.readyState === WebSocket.OPEN) {
+    if (!this.replaced && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify(message));
     }
   }
@@ -104,6 +112,8 @@ export class JamServer {
   private readonly connections = new Map<string, Connection>();
   private readonly rooms = new Map<string, RoomState>();
   private readonly timers = new Map<string, Set<NodeJS.Timeout>>();
+  private readonly snapshotAt = new Map<string, number>();
+  private readonly snapshotTimers = new Map<string, NodeJS.Timeout>();
   private readonly openPerIp = new Map<string, number>();
   private readonly newConnections = new RateLimiter(IP_NEW_CONNECTIONS_PER_MINUTE, RATE_WINDOW_MS);
   private readonly failedJoins = new RateLimiter(IP_FAILED_JOINS_PER_MINUTE, RATE_WINDOW_MS);
@@ -121,6 +131,7 @@ export class JamServer {
       handshakeMs: HANDSHAKE_MS,
       pingIntervalMs: PING_INTERVAL_MS,
       deadAfterMs: DEAD_AFTER_MS,
+      snapshotIntervalMs: SNAPSHOT_INTERVAL_MS,
       ...options.timing,
     };
     this.allowedOrigin = new URL(options.publicUrl).origin;
@@ -130,7 +141,32 @@ export class JamServer {
     });
     this.pinger = setInterval(() => {
       this.ping();
+      this.expire();
     }, this.timing.pingIntervalMs);
+    if (options.roomsFile) {
+      this.load(options.roomsFile);
+    }
+  }
+
+  private load(path: string): void {
+    const taken = takeRooms(path);
+    if (taken.problem !== null) {
+      log("rooms-file-broken", { problem: taken.problem });
+    }
+    const now = this.now();
+    for (const data of taken.rooms) {
+      if (!isSnapshotData(data)) {
+        log("room-not-loaded", { problem: "does not match the schema" });
+        continue;
+      }
+      const problem = snapshotProblem(data, now);
+      if (problem !== null) {
+        log("room-not-loaded", { problem });
+        continue;
+      }
+      this.rooms.set(data.room.id, fromSnapshot(data, now));
+    }
+    log("rooms-loaded", { rooms: this.rooms.size });
   }
 
   get roomCount(): number {
@@ -144,6 +180,14 @@ export class JamServer {
 
   async close(): Promise<void> {
     clearInterval(this.pinger);
+    if (this.options.roomsFile) {
+      saveRooms(this.options.roomsFile, [...this.rooms.values()].map(toSnapshot), this.now());
+      log("rooms-saved", { rooms: this.rooms.size });
+    }
+    for (const timer of this.snapshotTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.snapshotTimers.clear();
     for (const roomTimers of this.timers.values()) {
       for (const timer of roomTimers) {
         clearTimeout(timer);
@@ -308,6 +352,9 @@ export class JamServer {
   }
 
   private handle(connection: Connection, message: ClientMessage): void {
+    if (connection.replaced) {
+      return;
+    }
     const { roomId, publicId } = connection;
     if (roomId === null || publicId === null) {
       this.withoutRole(connection, message);
@@ -343,11 +390,7 @@ export class JamServer {
         this.join(connection, message);
         return;
       case "resume":
-        this.reject(
-          connection,
-          message.id,
-          connection.app === "web" ? "not-allowed" : "room-not-found",
-        );
+        this.resume(connection, message);
         return;
       default:
         this.reject(connection, requestIdOf(message), "not-allowed");
@@ -389,6 +432,53 @@ export class JamServer {
     }
     log("room-created", { rooms: this.rooms.size });
     this.apply(roomId, outcome);
+  }
+
+  private resume(connection: Connection, message: ResumeMessage): void {
+    if (connection.app === "web") {
+      this.reject(connection, message.id, "not-allowed");
+      return;
+    }
+    if (!this.options.hostKeys.isValid(message.hostKey)) {
+      this.reject(connection, message.id, "bad-key");
+      return;
+    }
+    const event = {
+      kind: "resume",
+      connection: connection.id,
+      id: message.id,
+      hostSecret: message.hostSecret,
+      outbox: message.outbox,
+    } as const;
+    if (this.rooms.has(message.roomId)) {
+      this.dispatch(message.roomId, { ...event, restored: false });
+      return;
+    }
+    const snapshot = message.snapshot;
+    let problem: string | null;
+    if (snapshot === null) {
+      problem = "no snapshot";
+    } else if (snapshot.room.id !== message.roomId) {
+      problem = "another room";
+    } else {
+      problem = snapshotProblem(snapshot, this.now());
+    }
+    if (snapshot === null || problem !== null) {
+      log("not-restored", { problem });
+      this.reject(connection, message.id, "room-not-found");
+      return;
+    }
+    if (hashSecret(message.hostSecret) !== snapshot.room.hostSecretHash) {
+      this.reject(connection, message.id, "bad-secret");
+      return;
+    }
+    if (this.rooms.size >= ROOMS_PER_SERVER) {
+      this.reject(connection, message.id, "server-full");
+      return;
+    }
+    this.rooms.set(message.roomId, fromSnapshot(snapshot, this.now()));
+    log("room-restored", { rooms: this.rooms.size });
+    this.dispatch(message.roomId, { ...event, restored: true });
   }
 
   private join(connection: Connection, message: JoinMessage): void {
@@ -460,6 +550,9 @@ export class JamServer {
             connection.roomId = roomId;
             connection.publicId = effect.publicId;
             connection.host = outcome.room?.hostPublicId === effect.publicId;
+            if (connection.host) {
+              this.replaceOlderHosts(roomId, connection);
+            }
           }
           break;
         }
@@ -471,6 +564,7 @@ export class JamServer {
               connection.send(stateFor(room, connection.publicId, now));
             }
           }
+          this.snapshotSoon(roomId);
           break;
         }
         case "to-host":
@@ -498,6 +592,54 @@ export class JamServer {
     }
   }
 
+  private replaceOlderHosts(roomId: string, newest: Connection): void {
+    for (const connection of this.inRoom(roomId)) {
+      if (connection.host && connection !== newest && !connection.replaced) {
+        connection.replaced = true;
+        connection.socket.close(1000);
+      }
+    }
+  }
+
+  private snapshotSoon(roomId: string): void {
+    if (this.snapshotTimers.has(roomId)) {
+      return;
+    }
+    const last = this.snapshotAt.get(roomId);
+    const wait = last === undefined ? 0 : last + this.timing.snapshotIntervalMs - this.now();
+    if (wait <= 0) {
+      this.sendSnapshot(roomId);
+      return;
+    }
+    this.snapshotTimers.set(
+      roomId,
+      setTimeout(() => {
+        this.snapshotTimers.delete(roomId);
+        this.sendSnapshot(roomId);
+      }, wait),
+    );
+  }
+
+  private sendSnapshot(roomId: string): void {
+    const room = this.rooms.get(roomId);
+    if (!room) {
+      return;
+    }
+    this.snapshotAt.set(roomId, this.now());
+    const message: ServerMessage = { type: "snapshot", data: toSnapshot(room) };
+    for (const connection of this.inRoom(roomId)) {
+      if (connection.host) {
+        connection.send(message);
+      }
+    }
+  }
+
+  private expire(): void {
+    for (const roomId of [...this.rooms.keys()]) {
+      this.dispatch(roomId, { kind: "tick" });
+    }
+  }
+
   private schedule(roomId: string, requestId: string, at: number): void {
     const roomTimers = this.timers.get(roomId) ?? new Set<NodeJS.Timeout>();
     this.timers.set(roomId, roomTimers);
@@ -522,6 +664,9 @@ export class JamServer {
       clearTimeout(timer);
     }
     this.timers.delete(roomId);
+    clearTimeout(this.snapshotTimers.get(roomId));
+    this.snapshotTimers.delete(roomId);
+    this.snapshotAt.delete(roomId);
     this.rooms.delete(roomId);
     log("room-ended", { reason, rooms: this.rooms.size });
   }

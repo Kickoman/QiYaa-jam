@@ -2,20 +2,20 @@
 
 Держит комнаты джема в памяти: участников, очередь, порядок, права и лимиты. Говорит с хозяином и
 гостями по протоколу из `spec/jam/protocol`, отдаёт веб-гостя и `/healthz`. Звук и токен Яндекса
-сюда не приходят: поиск и проверку треков сервер только пересылает хозяину. Сейчас готовы протокол
-и `/healthz`; комната — Kickoman/QiYaa-jam#7, сеть — #8.
+сюда не приходят: поиск и проверку треков сервер только пересылает хозяину. Готовы протокол,
+комната и `/healthz`; сеть и WebSocket — Kickoman/QiYaa-jam#8.
 
 | Файл или папка | Что там |
 |---|---|
 | [src/protocol/](src/protocol/README.md) | Типы из схем спецификации и проверка сообщений Ajv |
+| [src/room/](src/room/README.md) | Комната как чистый редьюсер: порядок, сиды, права, лимиты, `state` для каждого |
 | [src/net/](src/net/README.md) | HTTP: `/healthz`, остальное — 404 |
 | `src/log.ts` | `log(event, fields)` — строка JSON в stdout |
 | `src/main.ts` | Читает окружение, запускает HTTP, выходит по SIGTERM |
 | `scripts/generate-protocol.mjs` | Генерирует `src/protocol/generated/` из `spec/jam/protocol/schemas` |
-| `test/` | Vitest: примеры протокола из спецификации, HTTP |
+| `test/` | Vitest: примеры протокола, эталоны порядка, сценарии `ROOM-` и `SEED-`, HTTP |
 
-Зависимости идут в одну сторону: `main → net → protocol`. Комната (`src/room/`, #7) будет чистой и
-без сети:
+Зависимости идут в одну сторону: `main → net → room → protocol`. Комната чистая и без сети:
 
 ```bash
 grep -rlnE 'from "(ws|node:net|node:http)"' server/src/room/   # должно ничего не выводить

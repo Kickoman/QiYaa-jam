@@ -29,7 +29,7 @@ limits, and the room, ordering, recovery, seed and host scenarios.
   ```bash
   git submodule update --init
   npm ci
-  npm run check      # format, lint, generate, types, tests, build
+  npm run check      # generate, format, lint, types, tests, build
   ```
 
   When `deploy/Dockerfile` or the dependencies change, also build and start the image:

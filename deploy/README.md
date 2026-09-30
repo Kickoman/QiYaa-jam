@@ -2,12 +2,13 @@
 
 Сервер джема — один контейнер за имеющимся nginx. nginx держит TLS и проксирует `/` и `/ws` на
 `127.0.0.1:8090`. Наружу контейнер порт не публикует. Проверено разведкой
-[docs/spikes/vps-websocket.md](../docs/spikes/vps-websocket.md). Compose, ключи хозяина,
-обновление и откат добавит Kickoman/QiYaa-jam#12.
+[docs/spikes/vps-websocket.md](../docs/spikes/vps-websocket.md).
 
 | Файл | Что это |
 |---|---|
 | `Dockerfile` | Образ сервера: сборка на `node:22-alpine`, запуск от `node`, том `/data`, `STOPSIGNAL SIGTERM`, проверка `/healthz` |
+| `compose.yml` | Сервер на VPS: образ из GHCR по тегу, `127.0.0.1:8090`, том `data`, закреплённая подсеть, 30 с на остановку, ротация логов |
+| `deploy.sh` | Деплой тега `vX.Y.Z`: берёт `compose.yml` этого тега, `pull`, `up -d`; он же — принудительная команда ключа деплоя |
 | `nginx.conf.example` | `server`-блок nginx: `Upgrade`/`Connection` для `/ws`, `X-Real-IP`, долгий `proxy_read_timeout` |
 | `echo/` | Эхо-сервер разведки: тестовая страница, `/healthz`, WebSocket `/ws` с ping раз в 25 с и JSON-логом IP |
 
@@ -24,19 +25,67 @@ docker run --rm -p 127.0.0.1:8090:8090 -v jam-data:/data qiyaa-jam:dev
 запускает его и проверяет `/healthz`. Публикует в `ghcr.io/kickoman/qiyaa-jam`: `edge` с `master`,
 `X.Y.Z` с тега `vX.Y.Z`.
 
+## Первая установка
+
+На VPS, в `~/qiyaa-jam`:
+
+```bash
+mkdir -p ~/qiyaa-jam && cd ~/qiyaa-jam
+curl -fsSLO https://raw.githubusercontent.com/Kickoman/QiYaa-jam/master/deploy/deploy.sh && chmod +x deploy.sh
+printf 'PUBLIC_URL=https://jam.<домен>\n' > .env        # и ASSETLINKS_JSON=… для Android App Links
+./deploy.sh vX.Y.Z
+```
+
+`.env` в репозиторий не попадает: там настоящий домен. Порт `127.0.0.1:8090` и подсеть
+`172.30.90.0/24` не должны быть заняты (эхо разведки занимало ровно их).
+
+## Деплой из CI
+
+Тег `vX.Y.Z` → CI проверяет, собирает и публикует образ `X.Y.Z`, затем задание `deploy` заходит
+по SSH и вызывает `deploy.sh` с этим тегом, а потом ждёт `200` от `/healthz`. Секреты репозитория:
+
+| Секрет | Что там |
+|---|---|
+| `DEPLOY_SSH_KEY` | Закрытый ключ деплоя (ed25519) |
+| `DEPLOY_KNOWN_HOSTS` | `ssh-keyscan <vps>` |
+| `DEPLOY_TARGET` | `user@<vps>` |
+| `DEPLOY_HEALTH_URL` | `https://jam.<домен>/healthz` |
+
+Открытый ключ деплоя лежит в `~/.ssh/authorized_keys` на VPS с принудительной командой, так что
+он умеет только одно — задеплоить тег:
+
+```
+command="/home/<user>/qiyaa-jam/deploy.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAAA… qiyaa-jam-deploy
+```
+
+`deploy.sh` принимает только `vX.Y.Z` (цифры, точки и `v`), всё остальное — код 2 до любых действий.
+
+## Обновление, откат, логи
+
+```bash
+git tag v0.2.0 && git push origin v0.2.0      # обновление: CI делает всё сам
+ssh <vps> '~/qiyaa-jam/deploy.sh v0.1.0'      # откат на прошлый тег
+docker logs -f qiyaa-jam                      # логи: JSON-строки, по 10 МБ, три файла
+cat ~/qiyaa-jam/deployed.log                  # когда какой тег ставился
+```
+
+При `up -d` старый контейнер получает SIGTERM, пишет комнаты в `/data/rooms.json`, новый читает их
+при запуске (REC-10): гости и хозяин переподключаются и ничего не теряют. Том `data` переживает
+обновления; в нём же `host-keys.json`.
+
 ## Ключ хозяина
 
 Комнату создаёт только приложение с ключом хозяина. Ключ выдаётся на человека или устройство:
 
 ```bash
-docker compose exec jam node server/dist/cli.js keys add masha-pc     # печатает ключ один раз
-docker compose exec jam node server/dist/cli.js keys list
-docker compose exec jam node server/dist/cli.js keys revoke masha-pc
+docker exec qiyaa-jam node server/dist/cli.js keys add masha-pc     # печатает ключ один раз
+docker exec qiyaa-jam node server/dist/cli.js keys list
+docker exec qiyaa-jam node server/dist/cli.js keys revoke masha-pc
 ```
 
 Напечатанный ключ вставляется в настройки QiYaa рядом с адресом сервера и больше нигде не
 хранится: на сервере лежит только его SHA-256 в `/data/host-keys.json`. Сервер замечает новый или
-отозванный ключ сам; `docker compose kill -s SIGHUP jam` перечитывает файл сразу.
+отозванный ключ сам; `docker kill -s HUP qiyaa-jam` перечитывает файл сразу.
 
 ## nginx
 
@@ -76,6 +125,8 @@ docker logs qiyaa-jam-echo 2>&1 | tail -3
 rsync -a --exclude node_modules deploy/echo/ <vps>:qiyaa-jam-echo/
 ssh <vps> 'cd qiyaa-jam-echo && docker compose up -d --build'
 ```
+
+Эхо и сервер джема занимают один порт и одну подсеть: перед сервером эхо нужно остановить.
 
 Страница `https://jam.<домен>/` показывает состояние соединения, сколько оно живёт, какой IP видит
 сервер и сколько было переподключений. Кнопка «Не гасить экран» держит экран телефона включённым

@@ -12,7 +12,7 @@ if (!Number.isInteger(port) || port < 0 || port > 65_535) {
 }
 const publicUrl = environment.PUBLIC_URL ?? `http://localhost:${port}`;
 new URL(publicUrl);
-const assetlinksJson = environment.ASSETLINKS_JSON ?? null;
+const assetlinksJson = environment.ASSETLINKS_JSON || null;
 if (assetlinksJson !== null) {
   JSON.parse(assetlinksJson);
 }
@@ -25,7 +25,7 @@ const server = new JamServer({
   hostKeys,
   roomsFile: join(dataDir, "rooms.json"),
   assetlinksJson,
-  webRoot: environment.WEB_ROOT ?? null,
+  webRoot: environment.WEB_ROOT || null,
 });
 
 const address = await server.listen(port, host);

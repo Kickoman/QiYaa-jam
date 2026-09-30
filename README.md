@@ -1,0 +1,29 @@
+# QiYaa Jam
+
+Общая очередь для компании. Один QiYaa (ПК или Android) — хозяин: он играет музыку через свой
+аккаунт Яндекса. Гости сканируют QR-код и добавляют треки из браузера или из своего QiYaa. Здесь
+живут сервер джема, который держит комнату и её правила, и веб-страница гостя. Хозяин и гость в
+приложениях — в [Kickoman/QiYaa](https://github.com/Kickoman/QiYaa) и
+[Kickoman/QiYaa-android](https://github.com/Kickoman/QiYaa-android).
+
+| Папка | Что там |
+|---|---|
+| [server/](server/README.md) | Сервер джема: Node 22, TypeScript, `ws` |
+| [deploy/](deploy/README.md) | Образ Docker, nginx, как джем живёт на VPS |
+| [tools/](tools/) | Разведка ротора; позже — имитатор хозяина |
+| [docs/](docs/design/README.md) | Проект и план (`design/`), отчёты разведок (`spikes/`), [код-стайл](docs/code-style.md) |
+| `spec/` | Подмодуль [QiYaa-spec](https://github.com/Kickoman/QiYaa-spec): протокол, лимиты и сценарии в `spec/jam/` |
+
+Веб-гость (`web/`) появится в Kickoman/QiYaa-jam#13.
+
+## Быстрый старт
+
+```bash
+git clone --recurse-submodules git@github.com:Kickoman/QiYaa-jam.git
+cd QiYaa-jam
+npm ci
+npm run check                      # формат, линтер, генерация, типы, тесты, сборка
+PORT=8090 npm start -w server      # после check: сервер на :8090, GET /healthz → ok
+```
+
+Нужен Node 22 (`.node-version`). Правила для изменений — [CLAUDE.md](CLAUDE.md).

@@ -2,14 +2,27 @@
 
 Сервер джема — один контейнер за имеющимся nginx. nginx держит TLS и проксирует `/` и `/ws` на
 `127.0.0.1:8090`. Наружу контейнер порт не публикует. Проверено разведкой
-[docs/spikes/vps-websocket.md](../docs/spikes/vps-websocket.md). Сервера джема ещё нет, поэтому
-пока здесь только эхо-сервер разведки. Компоуз, ключи хозяина, обновление и откат добавит
-Kickoman/QiYaa-jam#12.
+[docs/spikes/vps-websocket.md](../docs/spikes/vps-websocket.md). Compose, ключи хозяина,
+обновление и откат добавит Kickoman/QiYaa-jam#12.
 
 | Файл | Что это |
 |---|---|
+| `Dockerfile` | Образ сервера: сборка на `node:22-alpine`, запуск от `node`, том `/data`, `STOPSIGNAL SIGTERM`, проверка `/healthz` |
 | `nginx.conf.example` | `server`-блок nginx: `Upgrade`/`Connection` для `/ws`, `X-Real-IP`, долгий `proxy_read_timeout` |
 | `echo/` | Эхо-сервер разведки: тестовая страница, `/healthz`, WebSocket `/ws` с ping раз в 25 с и JSON-логом IP |
+
+## Образ
+
+```bash
+docker build -f deploy/Dockerfile -t qiyaa-jam:dev .     # из корня репозитория, с подмодулем spec
+docker run --rm -p 127.0.0.1:8090:8090 -v jam-data:/data qiyaa-jam:dev
+```
+
+Сборка генерирует типы из `spec/jam/protocol` и компилирует `server/`. В итоговом образе только
+`server/dist` и зависимости времени выполнения (`ws`, `ajv`), около 170 МБ вместе с Node. По
+`docker stop` сервер получает SIGTERM и выходит с кодом 0. CI собирает образ на каждый push,
+запускает его и проверяет `/healthz`. Публикует в `ghcr.io/kickoman/qiyaa-jam`: `edge` с `master`,
+`X.Y.Z` с тега `vX.Y.Z`.
 
 ## nginx
 

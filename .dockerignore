@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/generated
+.git
+.github
+docs
+deploy/echo
+tools
+spec/fixtures
+spec/expected
+spec/dsp
+spec/player

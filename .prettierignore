@@ -1,0 +1,7 @@
+spec/
+docs/
+deploy/echo/
+**/generated/
+**/dist/
+package-lock.json
+*.md

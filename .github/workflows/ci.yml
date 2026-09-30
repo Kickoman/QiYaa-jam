@@ -1,0 +1,77 @@
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*.*.*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
+  image:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      PUBLISH: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: docker/setup-buildx-action@v3
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/Dockerfile
+          load: true
+          tags: qiyaa-jam:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: The image starts, answers /healthz and stops on SIGTERM
+        run: |
+          docker run -d --name jam -p 127.0.0.1:8090:8090 qiyaa-jam:ci
+          for attempt in $(seq 1 20); do curl -sf http://127.0.0.1:8090/healthz && break; sleep 1; done
+          test "$(curl -s http://127.0.0.1:8090/healthz)" = ok
+          docker stop -t 10 jam
+          test "$(docker inspect -f '{{.State.ExitCode}}' jam)" = 0
+      - id: meta
+        if: env.PUBLISH == 'true'
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/kickoman/qiyaa-jam
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/master' }}
+      - if: env.PUBLISH == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - if: env.PUBLISH == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha

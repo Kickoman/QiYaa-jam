@@ -3,6 +3,7 @@ import { JoinForm } from "./components/join-form.js";
 import { NowPlaying } from "./components/now-playing.js";
 import { People } from "./components/people.js";
 import { QueueList } from "./components/queue-list.js";
+import { SearchPanel } from "./components/search-panel.js";
 import type { Translate } from "./components/translate.js";
 import { initialLanguage, reasonText, rememberLanguage, text, type Language } from "./i18n.js";
 import { parseJoinLink, socketUrl, type JoinLink } from "./link.js";
@@ -20,7 +21,17 @@ function storage(): Storage | null {
   }
 }
 
-function Room({ t, session, view }: { t: Translate; session: JamSession; view: SessionView }) {
+function Room({
+  t,
+  language,
+  session,
+  view,
+}: {
+  t: Translate;
+  language: Language;
+  session: JamSession;
+  view: SessionView;
+}) {
   const room = view.room;
   const serverNow = useCallback(() => session.serverNow(), [session]);
   const names = useMemo(
@@ -34,6 +45,23 @@ function Room({ t, session, view }: { t: Translate; session: JamSession; view: S
   return (
     <>
       {room.hostOnline ? null : <p class="banner">{t("hostOffline")}</p>}
+      {room.you.isHost ? null : (
+        <SearchPanel
+          t={t}
+          reason={(reason) => reasonText(language, reason)}
+          room={room}
+          search={view.search}
+          adds={view.adds}
+          names={names}
+          onFind={(text) => session.find(text)}
+          onAdd={(trackId) => {
+            session.add(trackId);
+          }}
+          onClose={() => {
+            session.closeSearch();
+          }}
+        />
+      )}
       <NowPlaying
         t={t}
         room={room}
@@ -118,7 +146,7 @@ function Body({ t, language, link }: { t: Translate; language: Language; link: J
       content = <p class="hint">{t("joining")}</p>;
       break;
     case "in-room":
-      content = <Room t={t} session={session} view={view} />;
+      content = <Room t={t} language={language} session={session} view={view} />;
       break;
     case "refused":
       content = <p class="message">{reasonText(language, phase.reason)}</p>;

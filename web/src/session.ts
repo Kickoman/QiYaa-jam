@@ -3,6 +3,7 @@ import type {
   RejectedMessage,
   Room,
   ServerMessage,
+  Track,
 } from "../../server/src/protocol/generated/types.js";
 import type { JoinLink } from "./link.js";
 import { JamConnection, type ClientEnvironment, type ConnectionStatus } from "./protocol/client.js";
@@ -22,12 +23,22 @@ export type Phase =
 
 export type Notice = { readonly reason: Reason; readonly serial: number };
 
+export type Search =
+  | { readonly kind: "idle" }
+  | { readonly kind: "searching"; readonly text: string }
+  | { readonly kind: "results"; readonly text: string; readonly tracks: readonly Track[] }
+  | { readonly kind: "failed"; readonly text: string; readonly reason: Reason };
+
+export type AddState = "sending" | "added" | Reason;
+
 export type SessionView = {
   readonly phase: Phase;
   readonly status: ConnectionStatus;
   readonly room: Room | null;
   readonly notice: Notice | null;
   readonly name: string;
+  readonly search: Search;
+  readonly adds: ReadonlyMap<string, AddState>;
 };
 
 export type SessionDependencies = {
@@ -40,6 +51,12 @@ export type SessionDependencies = {
 };
 
 const NAME_LIMIT = 24;
+const SEARCH_LIMIT = 100;
+
+export function cleanSearch(text: string): string | null {
+  const trimmed = text.trim().replace(/\s+/g, " ");
+  return trimmed.length >= 1 && Array.from(trimmed).length <= SEARCH_LIMIT ? trimmed : null;
+}
 
 export function cleanName(name: string): string | null {
   const trimmed = name.trim().replace(/\s+/g, " ");
@@ -51,6 +68,10 @@ export class JamSession {
   private status: ConnectionStatus = "connecting";
   private room: Room | null = null;
   private notice: Notice | null = null;
+  private search: Search = { kind: "idle" };
+  private searchId: string | null = null;
+  private adds = new Map<string, AddState>();
+  private readonly addIds = new Map<string, string>();
   private membership: Membership | null;
   private connection: JamConnection | null = null;
   private lastVersion = 0;
@@ -76,6 +97,8 @@ export class JamSession {
       room: this.room,
       notice: this.notice,
       name: this.membership?.name ?? "",
+      search: this.search,
+      adds: this.adds,
     };
   }
 
@@ -111,6 +134,41 @@ export class JamSession {
     this.emit();
     this.connect();
     return true;
+  }
+
+  find(text: string): boolean {
+    const clean = cleanSearch(text);
+    if (clean === null) {
+      return false;
+    }
+    const id = this.nextId();
+    if (!this.connection?.send({ type: "search", id, text: clean })) {
+      return false;
+    }
+    this.searchId = id;
+    this.search = { kind: "searching", text: clean };
+    this.emit();
+    return true;
+  }
+
+  closeSearch(): void {
+    this.searchId = null;
+    this.search = { kind: "idle" };
+    this.emit();
+  }
+
+  add(trackId: string): void {
+    const id = this.nextId();
+    if (!this.connection?.send({ type: "add", id, trackId })) {
+      return;
+    }
+    this.addIds.set(id, trackId);
+    this.setAdd(trackId, "sending");
+  }
+
+  private setAdd(trackId: string, state: AddState): void {
+    this.adds = new Map(this.adds).set(trackId, state);
+    this.emit();
   }
 
   remove(itemId: string): void {
@@ -207,7 +265,35 @@ export class JamSession {
         this.room = message.room;
         this.emit();
         return;
+      case "searchResults":
+        if (message.id === this.searchId && this.search.kind === "searching") {
+          this.search = { kind: "results", text: this.search.text, tracks: message.tracks };
+          this.emit();
+        }
+        return;
+      case "ack": {
+        const trackId = this.addIds.get(message.id);
+        if (trackId !== undefined) {
+          this.addIds.delete(message.id);
+          this.setAdd(trackId, "added");
+        }
+        return;
+      }
       case "rejected":
+        if (
+          message.id !== undefined &&
+          message.id === this.searchId &&
+          this.search.kind === "searching"
+        ) {
+          this.search = { kind: "failed", text: this.search.text, reason: message.reason };
+          this.emit();
+          return;
+        }
+        if (message.id !== undefined && this.addIds.has(message.id)) {
+          const trackId = this.addIds.get(message.id) ?? "";
+          this.addIds.delete(message.id);
+          this.setAdd(trackId, message.reason);
+        }
         if (message.id === "join") {
           this.finish({ kind: "refused", reason: message.reason });
         } else if (message.reason === "update-required") {

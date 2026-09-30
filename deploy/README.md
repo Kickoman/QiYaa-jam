@@ -24,6 +24,20 @@ docker run --rm -p 127.0.0.1:8090:8090 -v jam-data:/data qiyaa-jam:dev
 запускает его и проверяет `/healthz`. Публикует в `ghcr.io/kickoman/qiyaa-jam`: `edge` с `master`,
 `X.Y.Z` с тега `vX.Y.Z`.
 
+## Ключ хозяина
+
+Комнату создаёт только приложение с ключом хозяина. Ключ выдаётся на человека или устройство:
+
+```bash
+docker compose exec jam node server/dist/cli.js keys add masha-pc     # печатает ключ один раз
+docker compose exec jam node server/dist/cli.js keys list
+docker compose exec jam node server/dist/cli.js keys revoke masha-pc
+```
+
+Напечатанный ключ вставляется в настройки QiYaa рядом с адресом сервера и больше нигде не
+хранится: на сервере лежит только его SHA-256 в `/data/host-keys.json`. Сервер замечает новый или
+отозванный ключ сам; `docker compose kill -s SIGHUP jam` перечитывает файл сразу.
+
 ## nginx
 
 1. DNS-запись `jam.<домен>` на VPS.

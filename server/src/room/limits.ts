@@ -4,6 +4,8 @@ const SECOND = 1_000;
 const MINUTE = 60 * SECOND;
 const HOUR = 60 * MINUTE;
 
+export const RATE_WINDOW_MS = MINUTE;
+
 export const GUEST_FRAME_BYTES = 4 * 1024;
 export const HOST_FRAME_BYTES = 256 * 1024;
 export const HANDSHAKE_MS = 5 * SECOND;

@@ -14,7 +14,10 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
       "@typescript-eslint/consistent-type-imports": "error",
-      "@typescript-eslint/switch-exhaustiveness-check": "error",
+      "@typescript-eslint/switch-exhaustiveness-check": [
+        "error",
+        { considerDefaultExhaustiveForUnions: true },
+      ],
       curly: "error",
       eqeqeq: "error",
       "no-console": "error",

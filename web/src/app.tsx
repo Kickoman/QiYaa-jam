@@ -148,6 +148,14 @@ function Body({ t, language, link }: { t: Translate; language: Language; link: J
     case "in-room":
       content = <Room t={t} language={language} session={session} view={view} />;
       break;
+    case "waiting-for-room":
+      content = (
+        <>
+          <p class="banner banner-error">{t("waitingForRoom")}</p>
+          {view.room ? <Room t={t} language={language} session={session} view={view} /> : null}
+        </>
+      );
+      break;
     case "refused":
       content = <p class="message">{reasonText(language, phase.reason)}</p>;
       break;
@@ -163,7 +171,8 @@ function Body({ t, language, link }: { t: Translate; language: Language; link: J
       content = <p class="message">{t("updateRequired")}</p>;
       break;
   }
-  const live = phase.kind === "joining" || phase.kind === "in-room";
+  const live =
+    phase.kind === "joining" || phase.kind === "in-room" || phase.kind === "waiting-for-room";
   return (
     <>
       {live && view.status === "offline" ? <p class="banner banner-error">{t("offline")}</p> : null}

@@ -139,3 +139,68 @@ describe("cleanName", () => {
     expect(cleanName("🎵".repeat(24))).toBe("🎵".repeat(24));
   });
 });
+
+describe("waiting for a lost room (REC-14)", () => {
+  function inRoom() {
+    const fake = fakeEnvironment();
+    const jam = new JamSession({
+      link: { roomId: ROOM, joinSecret: SECRET },
+      url: "wss://jam.example.org/ws",
+      appVersion: "test",
+      storage: memoryStorage(),
+      environment: fake.environment,
+      newParticipantId: () => PARTICIPANT,
+      random: () => 0.5,
+    });
+    jam.join("Аня");
+    fake.last().open();
+    fake.last().receive({ type: "welcome", protocol: 1, serverTime: 0 });
+    fake.last().receive({ type: "joined", id: "join", publicId: "a4n8q1" });
+    return { jam, fake };
+  }
+
+  it("REC-14 after room-not-found on a rejoin the guest keeps trying, then gets back in", () => {
+    const { jam, fake } = inRoom();
+    fake.last().drop();
+    fake.fire();
+    fake.last().open();
+    fake.last().receive({ type: "welcome", protocol: 1, serverTime: 0 });
+    fake.last().receive({ type: "rejected", id: "join", reason: "room-not-found" });
+    expect(jam.view().phase).toEqual({ kind: "waiting-for-room" });
+    expect(fake.timers.at(-1)?.ms).toBe(5_000);
+    const joinsBefore = fake
+      .last()
+      .messages()
+      .filter((message) => message.type === "join").length;
+    fake.fire();
+    expect(
+      fake
+        .last()
+        .messages()
+        .filter((message) => message.type === "join"),
+    ).toHaveLength(joinsBefore + 1);
+    fake.last().receive({ type: "rejected", id: "join", reason: "rate-limited" });
+    expect(fake.timers.at(-1)?.ms).toBe(10_000);
+    fake.fire();
+    fake.last().receive({ type: "joined", id: "join", publicId: "a4n8q1" });
+    expect(jam.view().phase).toEqual({ kind: "in-room" });
+  });
+
+  it("REC-14 gives up after 10 minutes of room-not-found", () => {
+    const { jam, fake } = inRoom();
+    fake.last().receive({ type: "rejected", id: "join", reason: "room-not-found" });
+    expect(jam.view().phase.kind).toBe("waiting-for-room");
+    fake.clock.now += 10 * 60_000;
+    fake.fire();
+    fake.last().receive({ type: "rejected", id: "join", reason: "room-not-found" });
+    expect(jam.view().phase).toEqual({ kind: "refused", reason: "room-not-found" });
+  });
+
+  it("a first visit that finds no room is refused at once", () => {
+    const { jam, fake, welcome } = session();
+    jam.join("Аня");
+    welcome();
+    fake.last().receive({ type: "rejected", id: "join", reason: "room-not-found" });
+    expect(jam.view().phase).toEqual({ kind: "refused", reason: "room-not-found" });
+  });
+});

@@ -15,6 +15,7 @@ export type Phase =
   | { readonly kind: "no-secret" }
   | { readonly kind: "need-name" }
   | { readonly kind: "joining" }
+  | { readonly kind: "waiting-for-room" }
   | { readonly kind: "in-room" }
   | { readonly kind: "refused"; readonly reason: Reason }
   | { readonly kind: "ended"; readonly reason: "host-ended" | "expired" }
@@ -48,9 +49,12 @@ export type SessionDependencies = {
   readonly storage: Pick<Storage, "getItem" | "setItem"> | null;
   readonly environment: ClientEnvironment;
   readonly newParticipantId: () => string;
+  readonly random?: () => number;
 };
 
 const NAME_LIMIT = 24;
+export const ROOM_WAIT_MS = 10 * 60_000;
+export const ROOM_RETRY_MS: readonly number[] = [5_000, 10_000, 20_000, 30_000];
 const SEARCH_LIMIT = 100;
 
 export function cleanSearch(text: string): string | null {
@@ -73,14 +77,19 @@ export class JamSession {
   private adds = new Map<string, AddState>();
   private readonly addIds = new Map<string, string>();
   private membership: Membership | null;
+  private wasInRoom: boolean;
   private connection: JamConnection | null = null;
   private lastVersion = 0;
+  private missingSince: number | null = null;
+  private retries = 0;
+  private retryTimer: unknown = null;
   private requests = 0;
   private readonly listeners = new Set<(view: SessionView) => void>();
 
   constructor(private readonly dependencies: SessionDependencies) {
     const { link, storage } = dependencies;
     this.membership = loadMembership(storage, link.roomId);
+    this.wasInRoom = this.membership !== null;
     if (this.membership) {
       this.phase = { kind: "joining" };
     } else if (link.joinSecret === null) {
@@ -180,8 +189,38 @@ export class JamSession {
   }
 
   stop(): void {
+    this.cancelRetry();
     this.connection?.stop();
     this.connection = null;
+  }
+
+  private cancelRetry(): void {
+    if (this.retryTimer !== null) {
+      this.dependencies.environment.clearTimer(this.retryTimer);
+      this.retryTimer = null;
+    }
+  }
+
+  private waitForRoom(): boolean {
+    const now = this.dependencies.environment.now();
+    this.missingSince ??= now;
+    if (now - this.missingSince >= ROOM_WAIT_MS) {
+      return false;
+    }
+    const base = ROOM_RETRY_MS[Math.min(this.retries, ROOM_RETRY_MS.length - 1)] ?? 30_000;
+    const jitter = 0.8 + 0.4 * (this.dependencies.random ?? Math.random)();
+    this.retries++;
+    this.phase = { kind: "waiting-for-room" };
+    this.cancelRetry();
+    this.retryTimer = this.dependencies.environment.setTimer(
+      () => {
+        this.retryTimer = null;
+        this.sendJoin();
+      },
+      Math.round(base * jitter),
+    );
+    this.emit();
+    return true;
   }
 
   networkBack(): void {
@@ -251,6 +290,9 @@ export class JamSession {
   private receive(message: ServerMessage): void {
     switch (message.type) {
       case "joined":
+        this.wasInRoom = true;
+        this.missingSince = null;
+        this.retries = 0;
         if (this.membership) {
           saveMembership(this.dependencies.storage, this.dependencies.link.roomId, this.membership);
         }
@@ -295,7 +337,12 @@ export class JamSession {
           this.setAdd(trackId, message.reason);
         }
         if (message.id === "join") {
-          this.finish({ kind: "refused", reason: message.reason });
+          const mayComeBack =
+            (message.reason === "room-not-found" || message.reason === "rate-limited") &&
+            (this.wasInRoom || this.missingSince !== null);
+          if (!mayComeBack || !this.waitForRoom()) {
+            this.finish({ kind: "refused", reason: message.reason });
+          }
         } else if (message.reason === "update-required") {
           this.finish({ kind: "update-required" });
         } else {

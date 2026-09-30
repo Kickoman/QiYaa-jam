@@ -8,7 +8,8 @@
     "test": "vitest run",
     "build": "vite build",
     "budget": "node scripts/budget.mjs",
-    "check": "npm run typecheck && npm test && npm run build && npm run budget"
+    "check": "npm run typecheck && npm test && npm run build && npm run budget",
+    "e2e": "vite build && playwright test"
   },
   "dependencies": {
     "preact": "^10.29.8"

@@ -32,9 +32,12 @@ limits, and the room, ordering, recovery, seed and host scenarios.
   npm run check      # generate, format, lint, types, tests, build
   ```
 
+  A change to the web guest also runs the browser tests (Chromium from `npx playwright install
+  chromium` once): `npm run e2e -w web`.
+
   When `deploy/Dockerfile` or the dependencies change, also build and start the image:
   `docker build -f deploy/Dockerfile -t qiyaa-jam:dev .` and check `GET /healthz`.
-- CI (`.github/workflows/ci.yml`) runs the same check on every push, builds the image, starts it,
+- CI (`.github/workflows/ci.yml`) runs the same check and the browser tests on every push, builds the image, starts it,
   and publishes it to `ghcr.io/kickoman/qiyaa-jam`: `edge` from `master`, `X.Y.Z` from a tag
   `vX.Y.Z`.
 - Never put a real domain, a host key, a token or a secret into the repository. Examples use

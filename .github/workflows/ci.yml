@@ -22,6 +22,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - name: Browser end-to-end tests
+        run: |
+          npx --workspace web playwright install --with-deps chromium
+          npm run e2e --workspace web
 
   image:
     needs: check

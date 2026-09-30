@@ -3,3 +3,5 @@ __pycache__/
 dist/
 generated/
 coverage/
+test-results/
+playwright-report/

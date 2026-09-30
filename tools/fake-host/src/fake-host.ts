@@ -160,6 +160,7 @@ export class FakeHost {
           this.goOffline(true);
         }
       });
+      socket.on("error", () => undefined);
       socket.once("error", reject);
       socket.once("open", () => {
         socket.send(
@@ -177,16 +178,32 @@ export class FakeHost {
       return;
     }
     this.online = false;
-    if (reconnectAutomatically && !this.stopped) {
-      const delay = RECONNECT_MS[Math.min(this.reconnects, RECONNECT_MS.length - 1)] ?? 30_000;
-      this.reconnects++;
-      this.log(`offline; reconnecting in ${delay} ms`);
-      this.reconnectTimer = setTimeout(() => {
-        this.resume().catch((failed: unknown) => {
-          this.log(`reconnect failed: ${String(failed)}`);
-        });
-      }, delay);
+    if (reconnectAutomatically) {
+      this.scheduleReconnect();
     }
+  }
+
+  private scheduleReconnect(): void {
+    if (this.stopped) {
+      return;
+    }
+    clearTimeout(this.reconnectTimer);
+    const delay = RECONNECT_MS[Math.min(this.reconnects, RECONNECT_MS.length - 1)] ?? 30_000;
+    this.reconnects++;
+    this.log(`offline; reconnecting in ${delay} ms`);
+    this.reconnectTimer = setTimeout(() => {
+      this.resume().then(
+        (resumed) => {
+          if (!resumed) {
+            this.log("the server no longer knows the room; giving up");
+          }
+        },
+        (failed: unknown) => {
+          this.log(`reconnect failed: ${String(failed)}`);
+          this.scheduleReconnect();
+        },
+      );
+    }, delay);
   }
 
   private send(message: ClientMessage): void {

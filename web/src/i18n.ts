@@ -30,6 +30,7 @@ const texts = {
     remove: "Убрать",
     skip: "Пропустить",
     hostOffline: "Хозяин не в сети",
+    waitingForRoom: "Сервер потерял джем. Жду, пока хозяин его вернёт, — до 10 минут.",
     endedHost: "Джем закончен. Спасибо, что были!",
     endedExpired: "Джем закончился: хозяина долго не было.",
     kicked: "Хозяин удалил вас из джема.",
@@ -98,6 +99,8 @@ const texts = {
     remove: "Remove",
     skip: "Skip",
     hostOffline: "The host is offline",
+    waitingForRoom:
+      "The server lost the jam. Waiting up to 10 minutes for the host to bring it back.",
     endedHost: "The jam is over. Thanks for coming!",
     endedExpired: "The jam ended: the host was away too long.",
     kicked: "The host removed you from the jam.",

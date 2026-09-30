@@ -1,4 +1,8 @@
-export type Membership = { readonly participantId: string; readonly name: string };
+export type Membership = {
+  readonly participantId: string;
+  readonly name: string;
+  readonly joinSecret: string;
+};
 
 function key(roomId: string): string {
   return `qiyaa-jam.room.${roomId}`;
@@ -14,8 +18,10 @@ export function loadMembership(
       return null;
     }
     const data = JSON.parse(raw) as Partial<Membership>;
-    return typeof data.participantId === "string" && typeof data.name === "string"
-      ? { participantId: data.participantId, name: data.name }
+    return typeof data.participantId === "string" &&
+      typeof data.name === "string" &&
+      typeof data.joinSecret === "string"
+      ? { participantId: data.participantId, name: data.name, joinSecret: data.joinSecret }
       : null;
   } catch {
     return null; // blocked storage or a broken entry: start as a new participant
@@ -32,8 +38,4 @@ export function saveMembership(
   } catch {
     // blocked storage: the guest comes back as a new participant after a reload
   }
-}
-
-export function newParticipantId(random: Pick<Crypto, "randomUUID">): string {
-  return random.randomUUID();
 }

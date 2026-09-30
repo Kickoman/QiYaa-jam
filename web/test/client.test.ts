@@ -4,38 +4,8 @@ import {
   RECONNECT_DELAYS_MS,
   type ClientEnvironment,
   type ConnectionStatus,
-  type SocketLike,
 } from "../src/protocol/client.js";
-
-class FakeSocket implements SocketLike {
-  readyState = 0;
-  onopen: (() => void) | null = null;
-  onmessage: ((event: { readonly data: unknown }) => void) | null = null;
-  onclose: ((event: { readonly code: number }) => void) | null = null;
-  readonly sent: string[] = [];
-
-  send(data: string): void {
-    this.sent.push(data);
-  }
-
-  close(): void {
-    this.readyState = 3;
-  }
-
-  open(): void {
-    this.readyState = 1;
-    this.onopen?.();
-  }
-
-  receive(message: object): void {
-    this.onmessage?.({ data: JSON.stringify(message) });
-  }
-
-  drop(): void {
-    this.readyState = 3;
-    this.onclose?.({ code: 1006 });
-  }
-}
+import { FakeSocket } from "./support/fake-environment.js";
 
 function harness() {
   const sockets: FakeSocket[] = [];

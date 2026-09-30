@@ -76,8 +76,9 @@ describe("join link", () => {
 describe("membership storage", () => {
   it("keeps the participantId and name per room", () => {
     const storage = memory();
-    saveMembership(storage, "7k3m9q2x", { participantId: "p1", name: "Аня" });
-    expect(loadMembership(storage, "7k3m9q2x")).toEqual({ participantId: "p1", name: "Аня" });
+    const membership = { participantId: "p1", name: "Аня", joinSecret: "JoinSecretJoinSecret12" };
+    saveMembership(storage, "7k3m9q2x", membership);
+    expect(loadMembership(storage, "7k3m9q2x")).toEqual(membership);
     expect(loadMembership(storage, "zzzzzzzz")).toBeNull();
   });
 
@@ -86,6 +87,6 @@ describe("membership storage", () => {
     storage.setItem("qiyaa-jam.room.7k3m9q2x", "{not json");
     expect(loadMembership(storage, "7k3m9q2x")).toBeNull();
     expect(loadMembership(blocked, "7k3m9q2x")).toBeNull();
-    saveMembership(blocked, "7k3m9q2x", { participantId: "p1", name: "Аня" });
+    saveMembership(blocked, "7k3m9q2x", { participantId: "p1", name: "Аня", joinSecret: "x" });
   });
 });

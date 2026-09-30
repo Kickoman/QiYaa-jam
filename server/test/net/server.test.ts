@@ -286,6 +286,42 @@ describe("rooms over the socket", () => {
     late.close();
   });
 
+  it("ROOM-16 ROOM-18 a QiYaa guest's track goes through the host's check; without the host it is host-offline", async () => {
+    const { host, roomId, joinSecret } = await hostWithRoom();
+    const borya = await JamClient.hello(url, "android", freshIp());
+    borya.send({
+      type: "join",
+      id: "q1",
+      roomId,
+      joinSecret,
+      participantId: "00000000-0000-4000-8000-000000000005",
+      name: "Боря",
+    });
+    await borya.nextOf("joined");
+    borya.send({ type: "add", id: "q2", track: track("555", "guest title") });
+    const request = await host.nextOf("validateRequest");
+    expect(request.trackIds).toEqual(["555"]);
+    host.send({
+      type: "validateResult",
+      requestId: request.requestId,
+      results: [{ trackId: "555", track: track("555", "canonical title") }],
+    });
+    expect(await borya.nextOf("ack")).toEqual({ type: "ack", id: "q2" });
+    const state = await host.nextOf("state");
+    expect(state.room.queue.map((item) => item.track.title)).toEqual(["canonical title"]);
+
+    host.close();
+    await host.closed;
+    await borya.stateWhere((state) => !state.room.hostOnline);
+    borya.send({ type: "add", id: "q3", track: track("556") });
+    expect(await borya.nextOf("rejected")).toEqual({
+      type: "rejected",
+      id: "q3",
+      reason: "host-offline",
+    });
+    borya.close();
+  });
+
   it("ROOM-03 the server refuses a room over its maximum with server-full", async () => {
     const hosts: JamClient[] = [];
     while (server.roomCount < ROOMS_PER_SERVER) {

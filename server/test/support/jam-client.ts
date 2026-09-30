@@ -89,6 +89,17 @@ export class JamClient {
     }
   }
 
+  async stateWhere(
+    matches: (state: Extract<ServerMessage, { type: "state" }>) => boolean,
+  ): Promise<Extract<ServerMessage, { type: "state" }>> {
+    for (;;) {
+      const state = await this.nextOf("state");
+      if (matches(state)) {
+        return state;
+      }
+    }
+  }
+
   close(): void {
     this.socket.close();
   }

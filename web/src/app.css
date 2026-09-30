@@ -1,0 +1,51 @@
+.app {
+  min-height: 100vh;
+  padding: 0 var(--gutter) env(safe-area-inset-bottom);
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--touch);
+  border-bottom: 1px solid var(--border);
+}
+
+.caption {
+  font: var(--caption);
+  letter-spacing: var(--caption-tracking);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.language {
+  min-width: var(--touch);
+  min-height: var(--touch);
+  background: none;
+  border: none;
+  font: var(--button);
+  letter-spacing: var(--button-tracking);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.main {
+  padding: var(--gutter) 0;
+}
+
+.status,
+.hint {
+  font: var(--hint);
+  letter-spacing: var(--hint-tracking);
+  color: var(--muted);
+}
+
+.status-online {
+  color: var(--accent);
+}
+
+.status-offline {
+  color: var(--error);
+}

@@ -8,6 +8,7 @@
   },
   "workspaces": [
     "server",
+    "web",
     "tools/fake-host"
   ],
   "scripts": {
@@ -16,7 +17,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "check": "npm run generate && npm run format:check && npm run lint && npm run check --workspaces",
-    "dev": "npm run generate && npm run dev -w tools/fake-host"
+    "dev": "npm run generate && npm run build -w web && npm run dev -w tools/fake-host"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

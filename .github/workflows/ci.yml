@@ -102,7 +102,7 @@ jobs:
           HEALTH_URL: ${{ secrets.DEPLOY_HEALTH_URL }}
         run: |
           for attempt in $(seq 1 30); do
-            if curl -fsS "$HEALTH_URL"; then exit 0; fi
+            if curl -fsS --max-time 10 "$HEALTH_URL"; then exit 0; fi
             sleep 2
           done
           exit 1

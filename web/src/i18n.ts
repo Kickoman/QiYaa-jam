@@ -20,7 +20,7 @@ const texts = {
     joining: "Joining…",
     nowPlaying: "Now playing",
     addedBy: "Added by {name}",
-    jamWave: "Jam wave",
+    jamWave: "Jam vibe",
     silence: "Nothing is playing yet",
     queue: "Queue",
     queueEmpty: "The queue is empty. Find a track above and add it.",

@@ -2,7 +2,6 @@ import { existsSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { addHostKey, HostKeys, revokeHostKey } from "../../src/host-keys.js";
 import type { SnapshotData } from "../../src/protocol/generated/types.js";
 import { ids } from "../../src/net/ids.js";
 import { parseTrustedProxies } from "../../src/net/real-ip.js";
@@ -11,7 +10,6 @@ import { JamClient } from "../support/jam-client.js";
 import { track } from "../support/room-harness.js";
 
 const PUBLIC_URL = "https://jam.example.org";
-const HOST_KEY = ids.hostKey();
 const running: JamServer[] = [];
 
 type Started = { server: JamServer; url: string };
@@ -21,14 +19,9 @@ async function start(
   roomsFile: boolean,
   snapshotIntervalMs = 200,
 ): Promise<Started> {
-  const keyFile = join(dataDir, "host-keys.json");
-  if (!existsSync(keyFile)) {
-    addHostKey(keyFile, "test", HOST_KEY, new Date());
-  }
   const server = new JamServer({
     publicUrl: PUBLIC_URL,
     trustedProxies: parseTrustedProxies("127.0.0.1"),
-    hostKeys: new HostKeys(keyFile),
     roomsFile: roomsFile ? join(dataDir, "rooms.json") : null,
     assetlinksJson: null,
     webRoot: null,
@@ -52,7 +45,7 @@ type Jam = { host: JamClient; roomId: string; hostSecret: string; joinSecret: st
 
 async function createJam(url: string): Promise<Jam> {
   const host = await JamClient.hello(url, "desktop");
-  host.send({ type: "create", id: "h1", hostKey: HOST_KEY, hostName: "Маша" });
+  host.send({ type: "create", id: "h1", hostName: "Маша" });
   const created = await host.nextOf("created");
   return {
     host,
@@ -109,7 +102,6 @@ function resumeMessage(
     id: "h2",
     roomId: jam.roomId,
     hostSecret: jam.hostSecret,
-    hostKey: HOST_KEY,
     snapshot,
     outbox: outbox.map((itemId) => ({ type: "started", itemId })),
   };
@@ -200,9 +192,8 @@ describe("recovery over the socket", () => {
     host.close();
   });
 
-  it("REC-08 REC-09 no snapshot means room-not-found; a wrong secret is bad-secret; a revoked key is bad-key", async () => {
-    const dataDir = mkdtempSync(join(tmpdir(), "jam-rec-"));
-    const { url } = await start(dataDir, false);
+  it("REC-08 REC-09 no snapshot means room-not-found, and a wrong secret is bad-secret", async () => {
+    const { url } = await start(mkdtempSync(join(tmpdir(), "jam-rec-")), false);
     const jam = await createJam(url);
     const snapshot = await latestSnapshot(jam.host, 1);
     const stranger = await JamClient.hello(url, "desktop");
@@ -212,14 +203,31 @@ describe("recovery over the socket", () => {
     expect(await stranger.next()).toEqual({ type: "rejected", id: "h2", reason: "room-not-found" });
     stranger.send({ ...resumeMessage(jam, null), hostSecret: ids.hostSecret() });
     expect(await stranger.next()).toEqual({ type: "rejected", id: "h2", reason: "bad-secret" });
-    revokeHostKey(join(dataDir, "host-keys.json"), "test");
-    stranger.send(resumeMessage(jam, null));
-    expect(await stranger.next()).toEqual({ type: "rejected", id: "h2", reason: "bad-key" });
     const browser = await JamClient.hello(url, "web");
     browser.send(resumeMessage(jam, null));
     expect(await browser.next()).toEqual({ type: "rejected", id: "h2", reason: "not-allowed" });
     stranger.close();
     browser.close();
     jam.host.close();
+  });
+
+  it("REC-06 ROOM-02 raising a room counts as a new room of the host's IP", async () => {
+    const first = await start(mkdtempSync(join(tmpdir(), "jam-rec-")), false);
+    const jam = await createJam(first.url);
+    const snapshot = await latestSnapshot(jam.host, 1);
+    jam.host.close();
+    await stop(first.server);
+    const second = await start(mkdtempSync(join(tmpdir(), "jam-rec-")), false);
+    const one = await createJam(second.url);
+    const two = await createJam(second.url);
+    const host = await JamClient.hello(second.url, "desktop");
+    host.send(resumeMessage(jam, snapshot));
+    expect(await host.next()).toEqual({ type: "rejected", id: "h2", reason: "rate-limited" });
+    one.host.send({ type: "end", id: "bye" });
+    await one.host.closed;
+    host.send(resumeMessage(jam, snapshot));
+    expect(await host.nextOf("resumed")).toEqual({ type: "resumed", id: "h2", restored: true });
+    host.close();
+    two.host.close();
   });
 });

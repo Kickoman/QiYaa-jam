@@ -44,7 +44,7 @@ type Outcome = { room: RoomState | null; effects: readonly Effect[] };   // room
 | `join` | соединение без роли прислало `join` | `connection`, `id`, `participantId`, `joinSecret`, `name`, `participantKind` (`web`/`qiyaa` из `hello.app`), `newPublicId` — свободный (`isPublicIdFree`) |
 | `disconnected` | закрылось соединение участника | `publicId` |
 | `message` | участник прислал проверенное схемой сообщение | `connection`, `from`, `message`, `fresh: {requestId, joinSecret}` — новые случайные значения на каждое сообщение |
-| `resume` | хозяин прислал `resume` с действующим ключом; комната живая или только что поднята из снимка | `connection`, `id`, `hostSecret`, `outbox`, `restored` |
+| `resume` | хозяин прислал `resume`; комната живая или только что поднята из снимка | `connection`, `id`, `hostSecret`, `outbox`, `restored` |
 | `timeout` | наступило время из эффекта `timer` | `requestId` |
 | `tick` | периодически, раз в `PING_INTERVAL_MS` | — |
 
@@ -79,8 +79,8 @@ type Outcome = { room: RoomState | null; effects: readonly Effect[] };   // room
   после восстановления гость ищет заново.
 - Когда хозяин уходит, все запросы к нему сразу получают `host-offline`, не дожидаясь тайм-аута.
 - Лимиты частоты (`add`, `search`) проверяет `net`, а не комната.
-- `resume` проверяет только секрет хозяина. Действует ли ключ и можно ли поднять комнату из снимка,
-  решает `net` до события.
+- `resume` проверяет только секрет хозяина. Можно ли поднять комнату из снимка (снимок, секрет,
+  лимиты на комнаты), решает `net` до события.
 - `tick` заканчивает комнату (`end{expired}`), когда хозяина нет `ROOM_WITHOUT_HOST_MS` (REC-05) или
   ей `ROOM_MAX_AGE_MS` (ROOM-53). `hostLeftAt` ставится, когда закрывается последнее соединение
   хозяина, и сбрасывается при `resume`.

@@ -1,9 +1,4 @@
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { addHostKey, HostKeys } from "../../src/host-keys.js";
-import { ids } from "../../src/net/ids.js";
 import { parseTrustedProxies } from "../../src/net/real-ip.js";
 import { JamServer } from "../../src/net/server.js";
 import {
@@ -16,14 +11,10 @@ import { JamClient } from "../support/jam-client.js";
 import { track } from "../support/room-harness.js";
 
 const PUBLIC_URL = "https://jam.example.org";
-const keyFile = join(mkdtempSync(join(tmpdir(), "jam-keys-")), "host-keys.json");
-const HOST_KEY = ids.hostKey();
-addHostKey(keyFile, "test", HOST_KEY, new Date());
 
 const server = new JamServer({
   publicUrl: PUBLIC_URL,
   trustedProxies: parseTrustedProxies("127.0.0.1"),
-  hostKeys: new HostKeys(keyFile),
   assetlinksJson: null,
   webRoot: null,
   timing: { handshakeMs: 300, pingIntervalMs: 100, deadAfterMs: 400 },
@@ -51,7 +42,7 @@ async function hostWithRoom(headers = freshIp()): Promise<{
   joinSecret: string;
 }> {
   const host = await JamClient.hello(url, "desktop", headers);
-  host.send({ type: "create", id: "h1", hostKey: HOST_KEY, hostName: "Маша" });
+  host.send({ type: "create", id: "h1", hostName: "Маша" });
   const created = await host.nextOf("created");
   await host.nextOf("state");
   return { host, roomId: created.roomId, joinSecret: created.joinSecret };
@@ -157,15 +148,55 @@ describe("who may connect", () => {
 });
 
 describe("rooms over the socket", () => {
-  it("ROOM-02 create with an unknown key gets bad-key, and a browser may not create at all", async () => {
-    const desktop = await JamClient.hello(url, "desktop", freshIp());
-    desktop.send({ type: "create", id: "h1", hostKey: ids.hostKey(), hostName: "Маша" });
-    expect(await desktop.next()).toEqual({ type: "rejected", id: "h1", reason: "bad-key" });
+  it("ROOM-01 any app may create a room, an older one with its host key too; a browser may not", async () => {
+    const older = await JamClient.hello(url, "android", freshIp());
+    older.send({ type: "create", id: "h1", hostKey: `qjk_${"A".repeat(43)}`, hostName: "Маша" });
+    expect(await older.nextOf("created")).toMatchObject({ id: "h1" });
+    older.send({ type: "end", id: "bye" });
+    await older.closed;
     const web = await JamClient.hello(url, "web", freshIp());
-    web.send({ type: "create", id: "h1", hostKey: HOST_KEY, hostName: "Маша" });
+    web.send({ type: "create", id: "h1", hostName: "Маша" });
     expect(await web.next()).toEqual({ type: "rejected", id: "h1", reason: "not-allowed" });
-    desktop.close();
     web.close();
+  });
+
+  it("ROOM-02 one IP has at most 2 live rooms and creates at most 5 an hour", async () => {
+    const ip = freshIp();
+    const live: JamClient[] = [];
+    async function tryCreate(): Promise<"created" | "rate-limited"> {
+      const host = await JamClient.hello(url, "android", ip);
+      host.send({ type: "create", id: "h1", hostName: "Маша" });
+      const reply = await host.next();
+      if (reply.type === "created") {
+        await host.nextOf("state");
+        live.push(host);
+        return "created";
+      }
+      expect(reply).toEqual({ type: "rejected", id: "h1", reason: "rate-limited" });
+      host.close();
+      return "rate-limited";
+    }
+    async function endOne(): Promise<void> {
+      const host = live.shift();
+      if (!host) {
+        throw new Error("no live room to end");
+      }
+      host.send({ type: "end", id: "bye" });
+      await host.closed;
+    }
+    expect(await tryCreate()).toBe("created");
+    expect(await tryCreate()).toBe("created");
+    expect(await tryCreate()).toBe("rate-limited");
+    await endOne();
+    expect(await tryCreate()).toBe("created");
+    await endOne();
+    expect(await tryCreate()).toBe("created");
+    await endOne();
+    expect(await tryCreate()).toBe("created");
+    await endOne();
+    await endOne();
+    expect(await tryCreate()).toBe("rate-limited");
+    expect(live).toHaveLength(0);
   });
 
   it("ROOM-58 after the IP's maximum of failed joins even the right secret is rate-limited", async () => {
@@ -328,7 +359,7 @@ describe("rooms over the socket", () => {
       hosts.push((await hostWithRoom()).host);
     }
     const extra = await JamClient.hello(url, "android", freshIp());
-    extra.send({ type: "create", id: "h1", hostKey: HOST_KEY, hostName: "Маша" });
+    extra.send({ type: "create", id: "h1", hostName: "Маша" });
     expect(await extra.next()).toEqual({ type: "rejected", id: "h1", reason: "server-full" });
     for (const host of [...hosts, extra]) {
       host.send({ type: "end", id: "bye" });

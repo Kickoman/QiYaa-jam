@@ -23,16 +23,15 @@ npm run dev                                   # из корня: сервер н
 PUBLIC_URL=http://192.168.0.106:8090 npm run dev   # чтобы открыть ссылку с телефона в той же сети
 SPEED=60 npm run dev                          # трек идёт в 60 раз быстрее
 
-npm start -w tools/fake-host -- --key qjk_… --server wss://jam.example.org/ws --speed 1 --drop-after 60
+npm start -w tools/fake-host -- --server wss://jam.example.org/ws --speed 1 --drop-after 60
 ```
 
-`npm run dev` каждый раз создаёт временную папку данных и новый ключ хозяина; комнаты не
+`npm run dev` запускает сервер без файла комнат: после выхода комнаты не
 сохраняются. Если есть `web/dist`, сервер отдаёт и веб-гостя.
 
 | Флаг CLI | По умолчанию | Что делает |
 |---|---|---|
 | `--server` | `ws://localhost:8090/ws` | Адрес WebSocket сервера |
-| `--key` | `JAM_HOST_KEY` | Ключ хозяина (`keys add` на сервере) |
 | `--name` | `Имитатор` | Имя хозяина |
 | `--speed` | `10` | Во сколько раз быстрее идут треки |
 | `--drop-after <s>` | нет | Через столько секунд оборвать соединение; переподключение через 1, 2, 4 … 30 с |
@@ -42,7 +41,7 @@ npm start -w tools/fake-host -- --key qjk_… --server wss://jam.example.org/ws 
 
 ```ts
 class FakeHost {
-  constructor(options: { url; hostKey; name; catalog; speed; log? });
+  constructor(options: { url; name; catalog; speed; log? });
   create(): Promise<Session>;          // hello, create; Session = {roomId, hostSecret, joinUrl}
   resume(): Promise<boolean>;          // resume со снимком и outbox; false — отказ
   drop(reconnectAutomatically: boolean): void;

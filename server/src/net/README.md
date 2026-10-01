@@ -8,7 +8,7 @@
 |---|---|
 | `server.ts` | `JamServer` — HTTP + WebSocket, реестр комнат, соединения, лимиты, таймеры |
 | `http.ts` | `createHttpServer` — `/healthz`, `assetlinks.json`, статика веб-гостя, остальное 404 |
-| `ids.ts` | `ids` — случайные `roomId`, `publicId`, секреты, ключ хозяина, id запросов и соединений |
+| `ids.ts` | `ids` — случайные `roomId`, `publicId`, секреты, id запросов и соединений |
 | `real-ip.ts` | `clientIp`, `parseTrustedProxies` — IP клиента с учётом `X-Real-IP` |
 | `rate-limit.ts` | `RateLimiter` (token bucket), `Violations` (нарушения и бан) |
 | `persistence.ts` | `saveRooms`, `takeRooms` — файл комнат на время планового перезапуска |
@@ -28,7 +28,6 @@ class JamServer {
 type JamServerOptions = HttpOptions & {
   publicUrl: string;                       // его origin — единственный разрешённый Origin браузера
   trustedProxies: ReadonlySet<string>;
-  hostKeys: { isValid(key: string): boolean };
   roomsFile?: string | null;               // файл комнат: читается при запуске, пишется в close()
   now?: () => number;                      // для тестов
   timing?: Partial<{ handshakeMs; pingIntervalMs; deadAfterMs; snapshotIntervalMs }>;   // для тестов
@@ -43,14 +42,21 @@ type JamServerOptions = HttpOptions & {
 2. **Рукопожатие.** Первое сообщение — `hello` за `HANDSHAKE_MS`, иначе закрытие с 1008 и нарушение
    (ROOM-54). Чужая версия протокола — `rejected{update-required, serverProtocol}` и закрытие с 1000,
    это не нарушение.
-3. **Без роли:** `create` (не из браузера; ключ хозяина; не больше `ROOMS_PER_SERVER` комнат),
+3. **Без роли:** `create` (не из браузера; лимиты на новую комнату, см. ниже),
    `join` (сначала лимит неудачных входов с IP), `resume`. Остальное — `not-allowed`.
-   `resume` (не из браузера) сначала проверяет ключ хозяина — даже для живой комнаты (REC-09). Живая
-   комната получает событие `resume` сразу. Незнакомая поднимается из снимка, если он есть, про эту
-   комнату, проходит `snapshotProblem`, SHA-256 секрета совпадает и есть место; иначе
-   `room-not-found`, `bad-secret` или `server-full` (REC-06…09).
+   `resume` (не из браузера): живая комната получает событие `resume` сразу. Незнакомая поднимается
+   из снимка, если он есть, про эту комнату, проходит `snapshotProblem`, SHA-256 секрета совпадает и
+   лимиты на новую комнату пропускают; иначе `room-not-found`, `bad-secret`, `server-full` или
+   `rate-limited` (REC-06…09).
 4. **С ролью:** у гостя сначала лимиты `add` и `search` на участника, затем событие в комнату.
    Каждое сообщение получает свежие `requestId` и `joinSecret` для редьюсера.
+
+**Лимиты на новую комнату** (`create` и подъём из снимка, ROOM-02, ROOM-03): сначала
+`ROOMS_PER_SERVER` на сервер (`server-full`), затем `IP_LIVE_ROOMS` живых комнат и
+`IP_ROOMS_PER_HOUR` новых за час с IP соединения (`rate-limited`, в логе `rooms-limited`). Комната
+считается за IP, с которого её создали или подняли, всю жизнь: `roomIps` (только в памяти, не в
+снимке и не в файле комнат; после перезапуска старые комнаты ни за кем не числятся). Отказ не
+тратит лимит.
 
 Проверка каждого кадра: бинарный — 1008; больше лимита соединения — 1009 (ROOM-55); не JSON-объект
 или неизвестный `type` — 1008; известный, но не по схеме — `rejected{id?, invalid-message}` и 1008

@@ -2,15 +2,13 @@ import { parseArgs } from "node:util";
 import { loadCatalog } from "./catalog.js";
 import { runFakeHost } from "./run.js";
 
-const USAGE = `usage: fake-host --key qjk_... [--server ws://localhost:8090/ws] [--name Имитатор]
+const USAGE = `usage: fake-host [--server ws://localhost:8090/ws] [--name Имитатор]
                  [--speed 10] [--drop-after <s>] [--restart-after <s>]
-The key may also come from JAM_HOST_KEY.
 `;
 
 const { values } = parseArgs({
   options: {
     server: { type: "string", default: "ws://localhost:8090/ws" },
-    key: { type: "string" },
     name: { type: "string", default: "Имитатор" },
     speed: { type: "string", default: "10" },
     "drop-after": { type: "string" },
@@ -19,16 +17,14 @@ const { values } = parseArgs({
   },
 });
 
-const hostKey = values.key ?? process.env.JAM_HOST_KEY;
 const speed = Number(values.speed);
-if (values.help || hostKey === undefined || !(speed > 0)) {
+if (values.help || !(speed > 0)) {
   process.stderr.write(USAGE);
   process.exit(values.help ? 0 : 1);
 }
 
 await runFakeHost({
   url: values.server,
-  hostKey,
   name: values.name,
   speed,
   catalog: loadCatalog(),

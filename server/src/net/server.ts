@@ -20,10 +20,13 @@ import {
   HANDSHAKE_MS,
   HOST_FRAME_BYTES,
   IP_FAILED_JOINS_PER_MINUTE,
+  IP_LIVE_ROOMS,
   IP_NEW_CONNECTIONS_PER_MINUTE,
   IP_OPEN_CONNECTIONS,
+  IP_ROOMS_PER_HOUR,
   PING_INTERVAL_MS,
   RATE_WINDOW_MS,
+  ROOM_RATE_WINDOW_MS,
   ROOMS_PER_SERVER,
   SNAPSHOT_INTERVAL_MS,
   VIOLATIONS_BEFORE_BAN,
@@ -42,8 +45,6 @@ import { clientIp } from "./real-ip.js";
 
 export const PROTOCOL = 1;
 
-export type HostKeyCheck = { isValid(key: string): boolean };
-
 export type Timing = {
   readonly handshakeMs: number;
   readonly pingIntervalMs: number;
@@ -54,7 +55,6 @@ export type Timing = {
 export type JamServerOptions = HttpOptions & {
   readonly publicUrl: string;
   readonly trustedProxies: ReadonlySet<string>;
-  readonly hostKeys: HostKeyCheck;
   readonly roomsFile?: string | null;
   readonly now?: () => number;
   readonly timing?: Partial<Timing>;
@@ -119,6 +119,9 @@ export class JamServer {
   private readonly failedJoins = new RateLimiter(IP_FAILED_JOINS_PER_MINUTE, RATE_WINDOW_MS);
   private readonly adds = new RateLimiter(GUEST_ADDS_PER_MINUTE, RATE_WINDOW_MS);
   private readonly searches = new RateLimiter(WEB_GUEST_SEARCHES_PER_MINUTE, RATE_WINDOW_MS);
+  private readonly newRooms = new RateLimiter(IP_ROOMS_PER_HOUR, ROOM_RATE_WINDOW_MS);
+  /** The IP that created or raised each live room (ROOM-02); not in the snapshot. */
+  private readonly roomIps = new Map<string, string>();
   private readonly violations = new Violations(VIOLATIONS_BEFORE_BAN, BAN_MS);
   private readonly allowedOrigin: string;
   private readonly timing: Timing;
@@ -402,12 +405,7 @@ export class JamServer {
       this.reject(connection, message.id, "not-allowed");
       return;
     }
-    if (!this.options.hostKeys.isValid(message.hostKey)) {
-      this.reject(connection, message.id, "bad-key");
-      return;
-    }
-    if (this.rooms.size >= ROOMS_PER_SERVER) {
-      this.reject(connection, message.id, "server-full");
+    if (!this.roomAllowed(connection, message.id)) {
       return;
     }
     let roomId = ids.roomId();
@@ -429,6 +427,7 @@ export class JamServer {
     );
     if (outcome.room) {
       this.rooms.set(roomId, outcome.room);
+      this.countRoom(roomId, connection.ip);
     }
     log("room-created", { rooms: this.rooms.size });
     this.apply(roomId, outcome);
@@ -437,10 +436,6 @@ export class JamServer {
   private resume(connection: Connection, message: ResumeMessage): void {
     if (connection.app === "web") {
       this.reject(connection, message.id, "not-allowed");
-      return;
-    }
-    if (!this.options.hostKeys.isValid(message.hostKey)) {
-      this.reject(connection, message.id, "bad-key");
       return;
     }
     const event = {
@@ -472,13 +467,38 @@ export class JamServer {
       this.reject(connection, message.id, "bad-secret");
       return;
     }
-    if (this.rooms.size >= ROOMS_PER_SERVER) {
-      this.reject(connection, message.id, "server-full");
+    if (!this.roomAllowed(connection, message.id)) {
       return;
     }
     this.rooms.set(message.roomId, fromSnapshot(snapshot, this.now()));
+    this.countRoom(message.roomId, connection.ip);
     log("room-restored", { rooms: this.rooms.size });
     this.dispatch(message.roomId, { ...event, restored: true });
+  }
+
+  /** ROOM-03, then ROOM-02: the limits on a new room, whether created or raised from a snapshot. */
+  private roomAllowed(connection: Connection, id: string): boolean {
+    if (this.rooms.size >= ROOMS_PER_SERVER) {
+      this.reject(connection, id, "server-full");
+      return false;
+    }
+    let live = 0;
+    for (const ip of this.roomIps.values()) {
+      if (ip === connection.ip) {
+        live++;
+      }
+    }
+    if (live >= IP_LIVE_ROOMS || !this.newRooms.allows(connection.ip, this.now())) {
+      log("rooms-limited", { ip: connection.ip, live });
+      this.reject(connection, id, "rate-limited");
+      return false;
+    }
+    return true;
+  }
+
+  private countRoom(roomId: string, ip: string): void {
+    this.roomIps.set(roomId, ip);
+    this.newRooms.spend(ip, this.now());
   }
 
   private join(connection: Connection, message: JoinMessage): void {
@@ -668,6 +688,7 @@ export class JamServer {
     this.snapshotTimers.delete(roomId);
     this.snapshotAt.delete(roomId);
     this.rooms.delete(roomId);
+    this.roomIps.delete(roomId);
     log("room-ended", { reason, rooms: this.rooms.size });
   }
 
@@ -681,7 +702,13 @@ export class JamServer {
         connection.socket.ping();
       }
     }
-    for (const limiter of [this.newConnections, this.failedJoins, this.adds, this.searches]) {
+    for (const limiter of [
+      this.newConnections,
+      this.failedJoins,
+      this.adds,
+      this.searches,
+      this.newRooms,
+    ]) {
       limiter.forgetIdle(now);
     }
   }

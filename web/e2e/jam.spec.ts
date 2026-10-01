@@ -3,8 +3,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Browser, type Page } from "@playwright/test";
-import { addHostKey, HostKeys } from "../../server/src/host-keys.js";
-import { ids } from "../../server/src/net/ids.js";
 import { parseTrustedProxies } from "../../server/src/net/real-ip.js";
 import { JamServer } from "../../server/src/net/server.js";
 import { loadCatalog } from "../../tools/fake-host/src/catalog.js";
@@ -18,19 +16,13 @@ class World {
   readonly port = nextPort++;
   readonly base = `http://127.0.0.1:${this.port}`;
   readonly dataDir = mkdtempSync(join(tmpdir(), "jam-e2e-"));
-  readonly hostKey = ids.hostKey();
   server: JamServer | null = null;
   hosts: FakeHost[] = [];
-
-  constructor() {
-    addHostKey(join(this.dataDir, "host-keys.json"), "e2e", this.hostKey, new Date());
-  }
 
   async startServer(keepRooms: boolean): Promise<void> {
     this.server = new JamServer({
       publicUrl: this.base,
       trustedProxies: parseTrustedProxies(undefined),
-      hostKeys: new HostKeys(join(this.dataDir, "host-keys.json")),
       roomsFile: keepRooms ? join(this.dataDir, "rooms.json") : null,
       assetlinksJson: null,
       webRoot: WEB_ROOT,
@@ -47,7 +39,6 @@ class World {
   host(): FakeHost {
     const host = new FakeHost({
       url: `ws://127.0.0.1:${this.port}/ws`,
-      hostKey: this.hostKey,
       name: "Маша",
       catalog,
       speed: 1,

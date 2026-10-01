@@ -10,7 +10,6 @@ import { searchCatalog } from "./catalog.js";
 
 export type FakeHostOptions = {
   readonly url: string;
-  readonly hostKey: string;
   readonly name: string;
   readonly catalog: readonly Track[];
   readonly speed: number;
@@ -66,7 +65,6 @@ export class FakeHost {
     this.send({
       type: "create",
       id: "create",
-      hostKey: this.options.hostKey,
       hostName: this.options.name,
     });
     const created = await this.waitFor((message) => message.type === "created");
@@ -93,7 +91,6 @@ export class FakeHost {
       id: "resume",
       roomId: session.roomId,
       hostSecret: session.hostSecret,
-      hostKey: this.options.hostKey,
       snapshot: this.snapshot,
       outbox: this.outbox.map((itemId) => ({ type: "started", itemId })),
     });

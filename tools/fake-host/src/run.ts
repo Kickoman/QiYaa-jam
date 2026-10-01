@@ -4,7 +4,6 @@ import { FakeHost } from "./fake-host.js";
 
 export type RunOptions = {
   readonly url: string;
-  readonly hostKey: string;
   readonly name: string;
   readonly speed: number;
   readonly catalog: readonly Track[];

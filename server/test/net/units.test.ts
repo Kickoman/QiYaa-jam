@@ -1,14 +1,4 @@
-import { mkdtempSync, utimesSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-  addHostKey,
-  HostKeyError,
-  HostKeys,
-  readHostKeys,
-  revokeHostKey,
-} from "../../src/host-keys.js";
 import { ids } from "../../src/net/ids.js";
 import { RateLimiter, Violations } from "../../src/net/rate-limit.js";
 import { clientIp, parseTrustedProxies } from "../../src/net/real-ip.js";
@@ -69,59 +59,12 @@ describe("Violations", () => {
   });
 });
 
-describe("host keys", () => {
-  function keyFile(): string {
-    return join(mkdtempSync(join(tmpdir(), "jam-keys-")), "host-keys.json");
-  }
-
-  it("stores only a hash, accepts the key, and forgets it when revoked", () => {
-    const path = keyFile();
-    const key = ids.hostKey();
-    addHostKey(path, "masha-pc", key, new Date("2026-09-30T00:00:00Z"));
-    const [record] = readHostKeys(path);
-    expect(record?.name).toBe("masha-pc");
-    expect(JSON.stringify(readHostKeys(path))).not.toContain(key);
-    const keys = new HostKeys(path);
-    expect(keys.isValid(key)).toBe(true);
-    expect(keys.isValid(ids.hostKey())).toBe(false);
-    expect(keys.isValid("not a key")).toBe(false);
-    expect(revokeHostKey(path, "masha-pc")).toBe(true);
-    expect(revokeHostKey(path, "masha-pc")).toBe(false);
-    keys.reload();
-    expect(keys.isValid(key)).toBe(false);
-  });
-
-  it("notices a changed file without a reload", () => {
-    const path = keyFile();
-    const keys = new HostKeys(path);
-    const key = ids.hostKey();
-    expect(keys.isValid(key)).toBe(false);
-    addHostKey(path, "phone", key, new Date());
-    utimesSync(path, new Date(), new Date(Date.now() + 5_000));
-    expect(keys.isValid(key)).toBe(true);
-  });
-
-  it("refuses a bad name, a taken name and a broken file", () => {
-    const path = keyFile();
-    expect(() => {
-      addHostKey(path, "Маша", ids.hostKey(), new Date());
-    }).toThrow(HostKeyError);
-    addHostKey(path, "pc", ids.hostKey(), new Date());
-    expect(() => {
-      addHostKey(path, "pc", ids.hostKey(), new Date());
-    }).toThrow("already exists");
-    writeFileSync(path, '{"keys": [{"name": "pc"}]}');
-    expect(() => readHostKeys(path)).toThrow("keys[0]");
-  });
-});
-
 describe("ids", () => {
   it("match the protocol's formats", () => {
     expect(ids.roomId()).toMatch(/^[0-9a-hjkmnp-tv-z]{8}$/);
     expect(ids.publicId()).toMatch(/^[0-9a-hjkmnp-tv-z]{6}$/);
     expect(ids.joinSecret()).toMatch(/^[A-Za-z0-9_-]{22}$/);
     expect(ids.hostSecret()).toMatch(/^[A-Za-z0-9_-]{43}$/);
-    expect(ids.hostKey()).toMatch(/^qjk_[A-Za-z0-9_-]{43}$/);
     expect(ids.requestId()).toMatch(/^[A-Za-z0-9_-]{1,36}$/);
   });
 });

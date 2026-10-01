@@ -19,7 +19,6 @@ export const ids = {
   publicId: (): string => crockford(6),
   joinSecret: (): string => base64url(16),
   hostSecret: (): string => base64url(32),
-  hostKey: (): string => `qjk_${base64url(32)}`,
   requestId: (): string => base64url(9),
   connectionId: (): string => base64url(9),
 };

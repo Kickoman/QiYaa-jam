@@ -35,7 +35,6 @@ _Версия 1 · 29.09.2026 · основа — [09-jam-design](09-jam-design.
 | `roomId` | 8 символов Crockford base32 (40 бит) | сервер | нет, стоит в пути ссылки |
 | `joinSecret` | 128 бит, base64url (22 символа) | сервер | да, стоит во фрагменте ссылки после `#` |
 | `hostSecret` | 256 бит, base64url | сервер | да, есть только у хозяина |
-| `hostKey` | `qjk_` + 256 бит base64url | CLI на сервере | да; на сервере хранится только SHA-256 |
 | `participantId` | UUID v4 | клиент гостя, хранится у него | **да**: по нему гость возвращается в комнату. В снимке комнаты хранится только SHA-256 |
 | `publicId` | 6 символов | сервер | нет: так участник виден другим (`addedBy`, `kick`) |
 | `itemId` | `i` + счётчик комнаты | сервер | нет; счётчик входит в снимок, поэтому после восстановления id не повторяются |
@@ -54,8 +53,8 @@ _Версия 1 · 29.09.2026 · основа — [09-jam-design](09-jam-design.
 
 | type | Поля | Ответ |
 |---|---|---|
-| `create` | `id, hostKey, hostName, settings?` | `created{id, roomId, hostSecret, joinSecret, joinUrl, publicId}`, затем `state` |
-| `resume` | `id, roomId, hostSecret, hostKey, snapshot, outbox[]` | `resumed{id, restored: bool}`, затем `state`. `restored: true` значит, что сервер комнату не знал и поднял её из `snapshot` |
+| `create` | `id, hostName, settings?` | `created{id, roomId, hostSecret, joinSecret, joinUrl, publicId}`, затем `state` |
+| `resume` | `id, roomId, hostSecret, snapshot, outbox[]` | `resumed{id, restored: bool}`, затем `state`. `restored: true` значит, что сервер комнату не знал и поднял её из `snapshot` |
 | `playing` | `source: "item"\|"wave"\|"idle", itemId?, track?, positionMs, paused` | — (при смене трека, паузе, перемотке и раз в 10 с) |
 | `started` | `itemId` | — (идемпотентно) |
 | `add` | `id, track` | `ack` / `rejected`. Хозяину верят, проверки нет |
@@ -148,7 +147,7 @@ track = { id, albumId?, title, artists[], durationMs, coverUri? }   // coverUri 
 ```
 server/src/  protocol/ (сгенерированные типы, проверка Ajv)  room/ (ordering.ts, room.ts — чистый редьюсер,
              limits.ts, snapshot.ts, seeds.ts)  net/ (http.ts, ws.ts, rate-limit.ts, real-ip.ts)
-             host-keys.ts  persistence.ts  cli.ts  main.ts
+             persistence.ts  main.ts
 server/test/ сценарии из spec/jam, эталоны порядка, интеграция по WebSocket
 web/         Preact-приложение гостя
 tools/       fake-host (имитатор хозяина)  rotor-spike (разведка S1)
@@ -165,7 +164,7 @@ spec/        подмодуль QiYaa-spec
 - режим джема в `queue/QueueController`;
 - экраны `ui/screens/JamHostScreen`, `JamGuestScreen`.
 
-Оба клиента держат сервер джема и ключ хозяина в настройках. Адрес сервера по умолчанию задаётся при сборке: CMake-опция `QIYAA_JAM_URL`, Gradle-свойство `qiyaaJamUrl`.
+Оба клиента держат адрес сервера джема в настройках (ключей хозяина нет с 2026-10-01, см. 09 §6.2). Адрес сервера по умолчанию задаётся при сборке: CMake-опция `QIYAA_JAM_URL`, Gradle-свойство `qiyaaJamUrl`.
 
 ---
 
@@ -551,7 +550,7 @@ Labels: jam, P2
 - `protocol.*`: кодек сообщений; тесты — на всех примерах `spec/jam/protocol/examples` (правильные разбираются, `invalid-*` отвергаются).
 - `client.*`: `QWebSocket`, рукопожатие, переподключение, `outbox`, смещение часов.
 - `session_store.*`: `roomId`, `hostSecret`, снимок, `outbox` в файле рядом с настройками, запись атомарная.
-- Настройки: адрес сервера (по умолчанию из CMake-опции `QIYAA_JAM_URL`) и ключ хозяина.
+- Настройки: адрес сервера (по умолчанию из CMake-опции `QIYAA_JAM_URL`).
 
 **Готово, когда:**
 - [ ] Тесты Qt Test против локального `QWebSocketServer`-заглушки: переподключение, `outbox` без дублей, восстановление после перезапуска приложения.
@@ -631,7 +630,7 @@ Labels: jam, P2
   - `JamClient` поверх интерфейса транспорта: рукопожатие, переподключение по сигналу сети из `NetworkMonitor` и по таймеру, `outbox`, смещение часов;
   - `JamSessionStore` поверх интерфейса хранилища.
 - `playback/OkHttpJamTransport` (или отдельный пакет по решению автора, с README).
-- Настройки: адрес сервера (по умолчанию из `qiyaaJamUrl` в Gradle) и ключ хозяина.
+- Настройки: адрес сервера (по умолчанию из `qiyaaJamUrl` в Gradle).
 
 **Готово, когда:**
 - [ ] JVM-тесты на всех примерах `spec/jam/protocol/examples` и на поведении клиента с фейковым транспортом и виртуальным временем.
@@ -691,7 +690,7 @@ Labels: jam, P2
   - настройки: порядок, пропуск гостями, вход, смена ссылки;
   - «Закончить»;
   - состояние связи.
-- Экран настроек сервера и ключа.
+- Экран настроек сервера.
 - В плейлисте имена гостей и отметка волны джема.
 - Все строки в `values/` и `values-ru/`.
 

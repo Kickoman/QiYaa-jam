@@ -1,9 +1,4 @@
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { addHostKey, HostKeys } from "../../../server/src/host-keys.js";
-import { ids } from "../../../server/src/net/ids.js";
 import { parseTrustedProxies } from "../../../server/src/net/real-ip.js";
 import { JamServer } from "../../../server/src/net/server.js";
 import type { Track } from "../../../server/src/protocol/generated/types.js";
@@ -12,9 +7,6 @@ import { loadCatalog, searchCatalog } from "../src/catalog.js";
 import { FakeHost, type Session } from "../src/fake-host.js";
 
 const catalog = loadCatalog();
-const HOST_KEY = ids.hostKey();
-const keyFile = join(mkdtempSync(join(tmpdir(), "jam-evening-")), "host-keys.json");
-addHostKey(keyFile, "evening", HOST_KEY, new Date());
 const servers: JamServer[] = [];
 const hosts: FakeHost[] = [];
 
@@ -29,7 +21,6 @@ async function startServer(): Promise<string> {
   const server = new JamServer({
     publicUrl: "https://jam.example.org",
     trustedProxies: parseTrustedProxies("127.0.0.1"),
-    hostKeys: new HostKeys(keyFile),
     roomsFile: null,
     assetlinksJson: null,
     webRoot: null,
@@ -41,7 +32,7 @@ async function startServer(): Promise<string> {
 }
 
 function fakeHost(url: string, speed: number): FakeHost {
-  const host = new FakeHost({ url, hostKey: HOST_KEY, name: "Маша", catalog, speed });
+  const host = new FakeHost({ url, name: "Маша", catalog, speed });
   hosts.push(host);
   return host;
 }

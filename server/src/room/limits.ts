@@ -5,6 +5,7 @@ const MINUTE = 60 * SECOND;
 const HOUR = 60 * MINUTE;
 
 export const RATE_WINDOW_MS = MINUTE;
+export const ROOM_RATE_WINDOW_MS = HOUR;
 
 export const GUEST_FRAME_BYTES = 4 * 1024;
 export const HOST_FRAME_BYTES = 256 * 1024;
@@ -18,6 +19,8 @@ export const VIOLATIONS_BEFORE_BAN = 3;
 export const BAN_MS = 10 * MINUTE;
 
 export const ROOMS_PER_SERVER = 20;
+export const IP_LIVE_ROOMS = 2;
+export const IP_ROOMS_PER_HOUR = 5;
 export const GUESTS_PER_ROOM = 30;
 export const QUEUE_LENGTH = 300;
 export const DEFAULT_MAX_PENDING_PER_GUEST = 10;

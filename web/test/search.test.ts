@@ -145,7 +145,7 @@ describe("texts", () => {
       ),
     ) as { $defs: { reason: { enum: string[] } } };
     const reasons = defs.$defs.reason.enum;
-    expect(reasons.length).toBeGreaterThanOrEqual(19);
+    expect(reasons.length).toBeGreaterThanOrEqual(18);
     for (const language of ["ru", "en"] as const) {
       const fallback = text(language, "reason.other");
       for (const reason of reasons) {

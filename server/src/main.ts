@@ -1,5 +1,4 @@
 import { join } from "node:path";
-import { HostKeys } from "./host-keys.js";
 import { log } from "./log.js";
 import { parseTrustedProxies } from "./net/real-ip.js";
 import { JamServer } from "./net/server.js";
@@ -17,12 +16,10 @@ if (assetlinksJson !== null) {
   JSON.parse(assetlinksJson);
 }
 const dataDir = environment.DATA_DIR ?? "/data";
-const hostKeys = new HostKeys(join(dataDir, "host-keys.json"));
 
 const server = new JamServer({
   publicUrl,
   trustedProxies: parseTrustedProxies(environment.TRUSTED_PROXY),
-  hostKeys,
   roomsFile: join(dataDir, "rooms.json"),
   assetlinksJson,
   webRoot: environment.WEB_ROOT || null,
@@ -30,11 +27,6 @@ const server = new JamServer({
 
 const address = await server.listen(port, host);
 log("listening", { host: address.address, port: address.port, publicUrl });
-
-process.on("SIGHUP", () => {
-  hostKeys.reload();
-  log("host-keys-reloaded");
-});
 
 process.on("SIGTERM", () => {
   log("sigterm", { rooms: server.roomCount });

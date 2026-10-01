@@ -1,6 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import type { Room } from "../../../server/src/protocol/generated/types.js";
 import { coverUrl, formatTime, positionAt } from "../format.js";
+import { Icon, Lamp, Window } from "./chrome.js";
 import type { Translate } from "./translate.js";
 
 type Props = {
@@ -26,62 +27,59 @@ export function NowPlaying({ t, room, names, serverNow, onSkip }: Props) {
   const track = playing.track;
   if (playing.source === "idle" || !track) {
     return (
-      <section class="now">
-        <p class="label">{t("nowPlaying")}</p>
-        <p class="hint">{t("silence")}</p>
-      </section>
+      <Window title={t("nowPlaying")} class="now">
+        <p class="screen screen-text">{t("silence")}</p>
+      </Window>
     );
   }
   const position = positionAt(playing, now);
-  const cover = coverUrl(track.coverUri, 400);
-  const who =
-    playing.source === "wave"
-      ? t("jamWave")
-      : t("addedBy", { name: names.get(playing.addedBy ?? "") ?? "?" });
+  const cover = coverUrl(track.coverUri, 200);
   const canSkip =
     !room.you.isHost && room.settings.guestsCanSkip && playing.source === "item" && playing.itemId;
   return (
-    <section class="now">
-      <p class="label">{t("nowPlaying")}</p>
+    <Window title={t("nowPlaying")} class="now">
       <div class="now-body">
-        {cover ? (
-          <img class="cover cover-large" src={cover} alt="" />
-        ) : (
-          <div class="cover cover-large" />
-        )}
+        <div class="cover-frame">
+          {cover ? <img class="cover" src={cover} alt="" /> : <div class="cover" />}
+        </div>
         <div class="now-text">
           <p class="track-title">{track.title}</p>
           <p class="track-artists">{track.artists.join(", ")}</p>
-          <p class={playing.source === "wave" ? "who who-wave" : "who"}>{who}</p>
+          {playing.source === "wave" ? (
+            <Lamp on>{t("jamWave")}</Lamp>
+          ) : (
+            <p class="who">{t("addedBy", { name: names.get(playing.addedBy ?? "") ?? "?" })}</p>
+          )}
         </div>
       </div>
+      <div class="screen now-time">
+        <span class="digits">{formatTime(position)}</span>
+        <span class="digits digits-dim">{formatTime(track.durationMs)}</span>
+      </div>
       <div
-        class="progress"
+        class="posbar"
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={track.durationMs}
         aria-valuenow={position}
       >
         <div
-          class="progress-fill"
-          style={{ width: `${(100 * position) / Math.max(1, track.durationMs)}%` }}
+          class="posbar-fill"
+          style={{ width: `calc(${(100 * position) / Math.max(1, track.durationMs)}% - 8px)` }}
         />
       </div>
-      <p class="readout">
-        <span>{formatTime(position)}</span>
-        <span>{formatTime(track.durationMs)}</span>
-      </p>
       {canSkip ? (
         <button
-          class="secondary"
+          class="btn btn-wide"
           type="button"
           onClick={() => {
             onSkip(playing.itemId ?? "");
           }}
         >
+          <Icon name="skip-forward" />
           {t("skip")}
         </button>
       ) : null}
-    </section>
+    </Window>
   );
 }

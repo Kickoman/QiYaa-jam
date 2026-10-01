@@ -33,23 +33,24 @@ const blocked = {
 };
 
 describe("language", () => {
-  it("follows the browser: Russian for ru, be and uk, English otherwise", () => {
-    expect(pickLanguage(null, ["ru-RU", "en"])).toBe("ru");
-    expect(pickLanguage(null, ["be"])).toBe("ru");
+  it("follows the browser: Belarusian for be and ru, English otherwise", () => {
+    expect(pickLanguage(null, ["be-BY", "en"])).toBe("be");
+    expect(pickLanguage(null, ["ru-RU", "en"])).toBe("be");
     expect(pickLanguage(null, ["de", "en-GB"])).toBe("en");
-    expect(pickLanguage(null, ["de"])).toBe("en");
+    expect(pickLanguage(null, ["uk", "de"])).toBe("en");
+    expect(pickLanguage("ru", ["de"])).toBe("en");
   });
 
   it("a stored choice wins, and blocked storage is survived", () => {
     const storage = memory();
     rememberLanguage(storage, "en");
-    expect(initialLanguage(storage, ["ru"])).toBe("en");
-    expect(initialLanguage(blocked, ["ru"])).toBe("ru");
+    expect(initialLanguage(storage, ["be"])).toBe("en");
+    expect(initialLanguage(blocked, ["be"])).toBe("be");
     rememberLanguage(blocked, "en");
   });
 
   it("has every text in both languages", () => {
-    expect(text("ru", "online")).toBe("На связи");
+    expect(text("be", "online")).toBe("На сувязі");
     expect(text("en", "online")).toBe("Connected");
   });
 });

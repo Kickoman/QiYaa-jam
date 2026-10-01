@@ -1,4 +1,24 @@
-/* Colours and type from QiYaa-android ui/theme (Color.kt, Type.kt), classic green accent. */
+/* Webfonts are served with the page: no requests to font CDNs. */
+
+@font-face {
+  font-family: "Press Start 2P";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/PressStart2P-Regular-Latin1.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Press Start 2P";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/PressStart2P-Regular-Cyrillic.woff2") format("woff2");
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
 
 @font-face {
   font-family: "IBM Plex Sans";
@@ -100,85 +120,100 @@
   unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 
-@font-face {
-  font-family: "IBM Plex Mono";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("./fonts/IBMPlexMono-SemiBold-Latin1.woff2") format("woff2");
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074,
-    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: "IBM Plex Mono";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("./fonts/IBMPlexMono-SemiBold-Cyrillic.woff2") format("woff2");
-  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-}
-
+/* Tokens of the QiYaa design system (claude.ai/design project "QiYaa Design System":
+   tokens/colors.css, effects.css, typography.css, spacing.css), the ones this page uses. */
 :root {
-  --background: #15161a;
-  --text: #d9dbe0;
-  --text-secondary: #a7abb5;
-  --muted: #8b8f99;
-  --dim: #6c707a;
-  --dimmer: #4a4e58;
-  --surface: #1c1e23;
-  --surface-2: #22242a;
-  --border: #2b2e36;
-  --deep: #0c0d10;
-  --inset-border: #1e2026;
-  --tab-background: #101114;
-  --handle: #3a3e48;
-  --error: #fa6863;
-  --accent: #29e16f;
-  --accent-dark: #1c8742;
-  --accent-background: #0f3118;
+  --chrome-950: #0d0e11;
+  --chrome-900: #16181c;
+  --chrome-800: #23262c;
+  --chrome-700: #2f333a;
+  --chrome-600: #3d424a;
+  --chrome-500: #4d535c;
+  --chrome-400: #6b727c;
+  --chrome-300: #8d949e;
+  --chrome-200: #b3b9c2;
+  --chrome-100: #dde1e6;
+  --led-900: #06210f;
+  --led-700: #1a8a3a;
+  --led-500: #3cff6e;
+  --led-glow: rgba(60, 255, 110, 0.45);
+  --gold-700: #a67f1e;
+  --gold-600: #c99a2e;
+  --gold-500: #e0b341;
+  --gold-400: #f0cc6b;
+  --red-500: #e0453a;
+  --white: #ffffff;
+  --lcd-bg: #050a06;
+  --pl-normal: #00ff00;
+  --pl-current: #ffffff;
+  --pl-bg: #000000;
 
-  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --surface-window: var(--chrome-700);
+  --surface-sunken: var(--chrome-900);
+  --surface-screen: var(--lcd-bg);
+  --surface-page: var(--chrome-950);
+  --bevel-light: var(--chrome-400);
+  --bevel-dark: var(--chrome-950);
+  --text-body: var(--chrome-100);
+  --text-muted: var(--chrome-300);
+  --text-inverse: var(--chrome-950);
+  --text-led: var(--led-500);
+  --text-led-dim: var(--led-700);
+  --text-title: var(--gold-500);
+  --accent: var(--gold-500);
+  --accent-hover: var(--gold-400);
+  --accent-active: var(--gold-600);
+  --focus-ring: var(--led-500);
+  --state-error: var(--red-500);
+
+  --bevel-raised: inset 2px 2px 0 var(--bevel-light), inset -2px -2px 0 var(--bevel-dark);
+  --bevel-raised-thin: inset 1px 1px 0 var(--bevel-light), inset -1px -1px 0 var(--bevel-dark);
+  --bevel-sunken: inset 2px 2px 0 var(--bevel-dark), inset -2px -2px 0 var(--bevel-light);
+  --bevel-sunken-thin: inset 1px 1px 0 var(--bevel-dark), inset -1px -1px 0 var(--bevel-light);
+  --screen-inset: inset 0 0 0 2px var(--chrome-950), inset 2px 2px 0 2px var(--chrome-800);
+  --shadow-window: 0 8px 24px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-menu: 0 6px 18px rgba(0, 0, 0, 0.6);
+  --glow-led: 0 0 6px var(--led-glow);
+  --glow-led-strong: 0 0 10px var(--led-glow), 0 0 2px var(--led-500);
+  --glow-gold: 0 0 12px rgba(224, 179, 65, 0.35);
+  --texture-brushed: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.025) 0 1px,
+    transparent 1px 3px
+  );
+  --texture-ridges: repeating-linear-gradient(
+    0deg,
+    var(--chrome-500) 0 2px,
+    var(--chrome-800) 2px 4px
+  );
+  --texture-scanlines: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.18) 0 1px,
+    transparent 1px 2px
+  );
+
+  --font-pixel: "Press Start 2P", monospace;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --text-pixel-xs: 8px;
+  --text-pixel-sm: 10px;
+  --text-pixel-md: 12px;
+  --text-led-md: 20px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --tracking-title: 0.08em;
 
-  --caption: 600 12px/1.2 var(--font-mono);
-  --caption-tracking: 2px;
-  --label: 500 10px/1.2 var(--font-mono);
-  --label-tracking: 2px;
-  --button: 500 11px/1.2 var(--font-mono);
-  --button-tracking: 1.5px;
-  --readout: 400 10px/1.2 var(--font-mono);
-  --readout-tracking: 1.5px;
-  --hint: 400 11px/1.3 var(--font-mono);
-  --hint-tracking: 1px;
-  --body: 400 15px/1.35 var(--font-sans);
-  --title: 500 17px/1.25 var(--font-sans);
-
-  --touch: 48px;
-  --gutter: 16px;
-  --radius: 6px;
-
-  color-scheme: dark;
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  min-height: 100%;
-  background: var(--background);
-  color: var(--text);
-  font: var(--body);
-  -webkit-text-size-adjust: 100%;
-}
-
-button {
-  font: inherit;
-  color: inherit;
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 10px;
+  --space-6: 12px;
+  --space-8: 16px;
+  --space-16: 32px;
+  --titlebar-h: 28px;
+  --hit-min: 44px;
+  --gutter: 12px;
 }

@@ -1,16 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
+import { Window } from "./components/chrome.js";
 import { JoinForm } from "./components/join-form.js";
 import { NowPlaying } from "./components/now-playing.js";
 import { People } from "./components/people.js";
 import { QueueList } from "./components/queue-list.js";
 import { SearchPanel } from "./components/search-panel.js";
 import type { Translate } from "./components/translate.js";
-import { initialLanguage, reasonText, rememberLanguage, text, type Language } from "./i18n.js";
+import {
+  initialLanguage,
+  LANGUAGES,
+  reasonText,
+  rememberLanguage,
+  text,
+  type Language,
+} from "./i18n.js";
 import { parseJoinLink, socketUrl, type JoinLink } from "./link.js";
 import { browserEnvironment } from "./protocol/client.js";
 import { JamSession, type SessionView } from "./session.js";
 
-const APP_VERSION = "0.2.0";
+const APP_VERSION = "0.3.0";
 const NOTICE_MS = 4_000;
 
 function storage(): Storage | null {
@@ -40,11 +48,11 @@ function Room({
     [room],
   );
   if (!room) {
-    return <p class="hint">{t("joining")}</p>;
+    return <p class="screen screen-text">{t("joining")}</p>;
   }
   return (
     <>
-      {room.hostOnline ? null : <p class="banner">{t("hostOffline")}</p>}
+      {room.hostOnline ? null : <p class="status banner">{t("hostOffline")}</p>}
       {room.you.isHost ? null : (
         <SearchPanel
           t={t}
@@ -134,16 +142,21 @@ function Body({ t, language, link }: { t: Translate; language: Language; link: J
   }, [view.notice, language]);
 
   const phase = view.phase;
+  const message = (body: string) => (
+    <Window title={t("appName")} class="message">
+      <p class="text">{body}</p>
+    </Window>
+  );
   let content;
   switch (phase.kind) {
     case "no-secret":
-      content = <p class="message">{t("noSecret")}</p>;
+      content = message(t("noSecret"));
       break;
     case "need-name":
       content = <JoinForm t={t} initialName={view.name} onJoin={(name) => session.join(name)} />;
       break;
     case "joining":
-      content = <p class="hint">{t("joining")}</p>;
+      content = <p class="screen screen-text">{t("joining")}</p>;
       break;
     case "in-room":
       content = <Room t={t} language={language} session={session} view={view} />;
@@ -151,31 +164,31 @@ function Body({ t, language, link }: { t: Translate; language: Language; link: J
     case "waiting-for-room":
       content = (
         <>
-          <p class="banner banner-error">{t("waitingForRoom")}</p>
+          <p class="status status-error banner">{t("waitingForRoom")}</p>
           {view.room ? <Room t={t} language={language} session={session} view={view} /> : null}
         </>
       );
       break;
     case "refused":
-      content = <p class="message">{reasonText(language, phase.reason)}</p>;
+      content = message(reasonText(language, phase.reason));
       break;
     case "ended":
-      content = (
-        <p class="message">{t(phase.reason === "host-ended" ? "endedHost" : "endedExpired")}</p>
-      );
+      content = message(t(phase.reason === "host-ended" ? "endedHost" : "endedExpired"));
       break;
     case "kicked":
-      content = <p class="message">{t("kicked")}</p>;
+      content = message(t("kicked"));
       break;
     case "update-required":
-      content = <p class="message">{t("updateRequired")}</p>;
+      content = message(t("updateRequired"));
       break;
   }
   const live =
     phase.kind === "joining" || phase.kind === "in-room" || phase.kind === "waiting-for-room";
   return (
     <>
-      {live && view.status === "offline" ? <p class="banner banner-error">{t("offline")}</p> : null}
+      {live && view.status === "offline" ? (
+        <p class="status status-error banner">{t("offline")}</p>
+      ) : null}
       {content}
       {notice ? (
         <p class="toast" role="status">
@@ -198,29 +211,39 @@ export function App() {
   }, [language]);
 
   return (
-    <div class="app">
-      <header class="header">
-        <span class="caption">{t("appName")}</span>
-        <button
-          class="language"
-          type="button"
-          aria-label={t("languageLabel")}
-          onClick={() => {
-            const next: Language = language === "ru" ? "en" : "ru";
-            rememberLanguage(storage(), next);
-            setLanguage(next);
-          }}
-        >
-          {t("language")}
-        </button>
+    <>
+      <header class="top-bar">
+        <div class="top-bar-inner">
+          <span class="wordmark">{t("appName")}</span>
+          <span class="ridge" aria-hidden="true" />
+          <div class="languages" role="group" aria-label={t("languageLabel")}>
+            {LANGUAGES.map((option) => (
+              <button
+                key={option}
+                class="toggle"
+                type="button"
+                lang={option}
+                aria-pressed={option === language}
+                onClick={() => {
+                  rememberLanguage(storage(), option);
+                  setLanguage(option);
+                }}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
       </header>
       <main class="main">
         {link ? (
           <Body t={t} language={language} link={link} />
         ) : (
-          <p class="message">{t("noRoom")}</p>
+          <Window title={t("appName")} class="message">
+            <p class="text">{t("noRoom")}</p>
+          </Window>
         )}
       </main>
-    </div>
+    </>
   );
 }

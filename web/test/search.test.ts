@@ -137,7 +137,7 @@ describe("search and add in the session", () => {
 });
 
 describe("texts", () => {
-  it("every reason of the protocol has its own text in Russian and English", () => {
+  it("every reason of the protocol has its own text in English and Belarusian", () => {
     const defs = JSON.parse(
       readFileSync(
         new URL("../../spec/jam/protocol/schemas/defs.schema.json", import.meta.url),
@@ -146,7 +146,7 @@ describe("texts", () => {
     ) as { $defs: { reason: { enum: string[] } } };
     const reasons = defs.$defs.reason.enum;
     expect(reasons.length).toBeGreaterThanOrEqual(18);
-    for (const language of ["ru", "en"] as const) {
+    for (const language of ["en", "be"] as const) {
       const fallback = text(language, "reason.other");
       for (const reason of reasons) {
         expect(reasonText(language, reason), `${language} ${reason}`).not.toBe(fallback);

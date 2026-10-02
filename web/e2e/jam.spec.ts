@@ -121,7 +121,7 @@ test("two guests join, add in turns and follow the host going away and back", as
   await world.end();
 });
 
-test("listening along (experimental): a guest plays the host's file, shown on the lock screen", async ({
+test("LISTEN-07 LISTEN-12 a guest listens along to the host's file, shown on the lock screen", async ({
   browser,
 }) => {
   const world = new World();

@@ -129,7 +129,7 @@ describe("the host goes away and comes back", () => {
 });
 
 describe("snapshots", () => {
-  it("a snapshot leaves out the listening link, which expires within the hour", () => {
+  it("LISTEN-06 a snapshot leaves out the listening links, which expire within the hour", () => {
     const { jam } = evening();
     jam.send(HOST, {
       type: "playing",
@@ -139,11 +139,14 @@ describe("snapshots", () => {
       paused: false,
       listenUrl:
         "https://s963sas.storage.yandex.net/get-mp3/0123456789abcdef0123456789abcdef/00065cd937b03427/rmusic/track.mp3",
+      listenNextUrl:
+        "https://s963sas.storage.yandex.net/get-mp3/0123456789abcdef0123456789abcdef/00065cd937b03427/rmusic/next.mp3",
     });
-    expect(jam.room.nowPlaying.listenUrl).toBeDefined();
+    expect(jam.room.nowPlaying.listenNextUrl).toBeDefined();
     const snapshot = toSnapshot(jam.room);
     expect(isSnapshotData(snapshot)).toBe(true);
     expect(snapshot.room.nowPlaying.listenUrl).toBeUndefined();
+    expect(snapshot.room.nowPlaying.listenNextUrl).toBeUndefined();
   });
 
   it("the snapshot passes its schema and holds no secret", () => {

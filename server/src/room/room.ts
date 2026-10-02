@@ -1,4 +1,4 @@
-import { withoutListenUrl } from "./snapshot.js";
+import { withoutListenUrls } from "./snapshot.js";
 import type {
   AddMessage,
   NowPlaying,
@@ -269,8 +269,11 @@ function startItem(room: RoomState, itemId: string, now: number): RoomState | nu
 
 function onPlaying(room: RoomState, message: PlayingMessage, now: number): Outcome {
   const report = { positionMs: message.positionMs, paused: message.paused, reportedAt: now };
-  // Listening along (experimental): the link of the file the host plays, until the next playing.
-  const listen = message.listenUrl === undefined ? {} : { listenUrl: message.listenUrl };
+  // LISTEN-06: the links of the files the host plays and plays next, until the next playing.
+  const listen = {
+    ...(message.listenUrl === undefined ? {} : { listenUrl: message.listenUrl }),
+    ...(message.listenNextUrl === undefined ? {} : { listenNextUrl: message.listenNextUrl }),
+  };
   if (message.source === "item") {
     const current = room.nowPlaying;
     const isCurrent = current.source === "item" && current.itemId === message.itemId;
@@ -281,7 +284,7 @@ function onPlaying(room: RoomState, message: PlayingMessage, now: number): Outco
     }
     return changed(room, {
       ...base,
-      nowPlaying: { ...withoutListenUrl(base.nowPlaying), ...report, ...listen },
+      nowPlaying: { ...withoutListenUrls(base.nowPlaying), ...report, ...listen },
     });
   }
   const nowPlaying: NowPlaying =

@@ -601,23 +601,34 @@ describe("what plays", () => {
   });
 });
 
-describe("listening along (experimental)", () => {
+describe("listening along", () => {
   const link = (name: string) =>
     `https://s963sas.storage.yandex.net/get-mp3/0123456789abcdef0123456789abcdef/00065cd937b03427/rmusic/${name}.mp3`;
 
-  it("the host's listenUrl goes into nowPlaying until a playing without one", () => {
+  it("LISTEN-06 the host's links go into nowPlaying until a playing without them", () => {
     const jam = new RoomHarness();
     jam.add(HOST, "1");
     jam.send(HOST, { type: "started", itemId: "i1" });
     const report = { type: "playing", source: "item", itemId: "i1", paused: false } as const;
-    jam.send(HOST, { ...report, positionMs: 0, listenUrl: link("one") });
+    jam.send(HOST, {
+      ...report,
+      positionMs: 0,
+      listenUrl: link("one"),
+      listenNextUrl: link("two"),
+    });
+    expect(jam.room.nowPlaying).toMatchObject({
+      listenUrl: link("one"),
+      listenNextUrl: link("two"),
+    });
+    jam.send(HOST, { ...report, positionMs: 10_000, listenUrl: link("one") });
     expect(jam.room.nowPlaying.listenUrl).toBe(link("one"));
-    jam.send(HOST, { ...report, positionMs: 10_000 });
-    expect(jam.room.nowPlaying).toMatchObject({ itemId: "i1", positionMs: 10_000 });
+    expect(jam.room.nowPlaying.listenNextUrl).toBeUndefined();
+    jam.send(HOST, { ...report, positionMs: 20_000 });
+    expect(jam.room.nowPlaying).toMatchObject({ itemId: "i1", positionMs: 20_000 });
     expect(jam.room.nowPlaying.listenUrl).toBeUndefined();
   });
 
-  it("a wave track carries its own link, and idle none", () => {
+  it("LISTEN-06 a wave track carries its own links, and idle none", () => {
     const jam = new RoomHarness();
     jam.send(HOST, {
       type: "playing",
@@ -626,19 +637,25 @@ describe("listening along (experimental)", () => {
       positionMs: 0,
       paused: false,
       listenUrl: link("wave"),
+      listenNextUrl: link("after"),
     });
-    expect(jam.room.nowPlaying.listenUrl).toBe(link("wave"));
+    expect(jam.room.nowPlaying).toMatchObject({
+      listenUrl: link("wave"),
+      listenNextUrl: link("after"),
+    });
     jam.send(HOST, {
       type: "playing",
       source: "idle",
       positionMs: 0,
       paused: true,
       listenUrl: link("idle"),
+      listenNextUrl: link("idle-next"),
     });
     expect(jam.room.nowPlaying.listenUrl).toBeUndefined();
+    expect(jam.room.nowPlaying.listenNextUrl).toBeUndefined();
   });
 
-  it("the next item starts without the previous item's link", () => {
+  it("LISTEN-06 the next item starts without the previous item's links", () => {
     const jam = new RoomHarness();
     jam.add(HOST, "1");
     jam.add(HOST, "2");
@@ -650,10 +667,12 @@ describe("listening along (experimental)", () => {
       positionMs: 0,
       paused: false,
       listenUrl: link("one"),
+      listenNextUrl: link("two"),
     });
     jam.send(HOST, { type: "started", itemId: "i2" });
     expect(jam.room.nowPlaying).toMatchObject({ itemId: "i2" });
     expect(jam.room.nowPlaying.listenUrl).toBeUndefined();
+    expect(jam.room.nowPlaying.listenNextUrl).toBeUndefined();
   });
 });
 

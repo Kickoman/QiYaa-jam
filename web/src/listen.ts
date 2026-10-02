@@ -23,13 +23,16 @@ export interface AudioLike {
 }
 
 /**
- * Listening along (experimental, spec/jam/protocol/README.md): plays the host's `listenUrl` on
+ * Listening along (spec/jam/listen.md, LISTEN-07 to LISTEN-12): plays the host's `listenUrl` on
  * this device at the room's progress, follows the host's pause, track and link, and seeks again
- * when it drifts more than DRIFT_SECONDS. A pause from outside (the lock screen, a headset, a
- * call) ends the listening, so the next state does not start the sound again.
+ * when it drifts more than DRIFT_SECONDS. When the file ends first, it goes on with
+ * `listenNextUrl` at once. A pause from outside (the lock screen, a headset, a call) ends the
+ * listening, so the next state does not start the sound again.
  */
 export class Listener {
   private link: string | null = null;
+  // The link of a file that ended before the state moved on: that state is stale (LISTEN-09).
+  private finishedLink: string | null = null;
   private nowPlaying: NowPlaying | null = null;
   private listening = false;
   private ownPauseAt = -Infinity;
@@ -42,6 +45,9 @@ export class Listener {
   ) {
     audio.addEventListener("loadedmetadata", () => {
       this.sync();
+    });
+    audio.addEventListener("ended", () => {
+      this.playNext();
     });
     audio.addEventListener("pause", () => {
       const own = this.clock() - this.ownPauseAt < OWN_PAUSE_MS;
@@ -65,6 +71,7 @@ export class Listener {
   stop(): void {
     this.listening = false;
     this.link = null;
+    this.finishedLink = null;
     this.pauseAudio();
     this.audio.removeAttribute("src");
     this.audio.load();
@@ -87,6 +94,10 @@ export class Listener {
       this.pauseAudio(); // nothing plays, or the host stopped sharing: wait for the next link
       return;
     }
+    if (link === this.finishedLink) {
+      return; // the next file plays already; the state follows soon
+    }
+    this.finishedLink = null;
     if (link !== this.link) {
       this.link = link;
       this.ownPauseAt = this.clock();
@@ -102,13 +113,30 @@ export class Listener {
     if (playing.paused) {
       this.pauseAudio();
     } else if (this.audio.paused) {
-      this.audio.play().catch((failed: unknown) => {
-        // A new link aborts the last play; only a refusal to play at all ends the listening.
-        if (failed instanceof DOMException && failed.name === "NotAllowedError") {
-          this.stop();
-        }
-      });
+      this.play();
     }
+  }
+
+  /** LISTEN-09: the file ended before the room moved on; a locked phone may run no timers. */
+  private playNext(): void {
+    const next = this.nowPlaying?.listenNextUrl;
+    if (!this.listening || !next || next === this.link) {
+      return;
+    }
+    this.finishedLink = this.link;
+    this.link = next;
+    this.ownPauseAt = this.clock();
+    this.audio.src = next;
+    this.play();
+  }
+
+  private play(): void {
+    this.audio.play().catch((failed: unknown) => {
+      // A new link aborts the last play; only a refusal to play at all ends the listening.
+      if (failed instanceof DOMException && failed.name === "NotAllowedError") {
+        this.stop();
+      }
+    });
   }
 
   private pauseAudio(): void {

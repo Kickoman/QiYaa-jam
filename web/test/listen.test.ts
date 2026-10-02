@@ -81,7 +81,12 @@ function setup() {
   };
 }
 
-function item(link: string | undefined, positionMs: number, paused = false): NowPlaying {
+function item(
+  link: string | undefined,
+  positionMs: number,
+  paused = false,
+  next?: string,
+): NowPlaying {
   return {
     source: "item",
     itemId: "i1",
@@ -91,11 +96,33 @@ function item(link: string | undefined, positionMs: number, paused = false): Now
     paused,
     reportedAt: 95_000,
     ...(link ? { listenUrl: link } : {}),
+    ...(next ? { listenNextUrl: next } : {}),
   };
 }
 
 describe("listening along", () => {
-  it("plays the host's file at the room's progress once its head arrives", () => {
+  it("LISTEN-09 a file that ends first goes on with the next link, and the stale state keeps it", () => {
+    const { audio, listener } = setup();
+    listener.start();
+    listener.follow(item(LINK_A, 190_000, false, LINK_B));
+    audio.loaded();
+    audio.ended = true;
+    audio.paused = true;
+    audio.emit("pause");
+    audio.emit("ended");
+    expect(audio.src).toBe(LINK_B);
+    expect(audio.paused).toBe(false);
+    expect(listener.isListening).toBe(true);
+    audio.ended = false;
+    listener.sync(); // the state still names the file that ended
+    expect(audio.src).toBe(LINK_B);
+    audio.currentTime = 4;
+    listener.follow(item(LINK_B, 0)); // the host moved on 5 s ago: 1 s off is close enough
+    expect(audio.src).toBe(LINK_B);
+    expect(audio.currentTime).toBe(4);
+  });
+
+  it("LISTEN-07 LISTEN-08 plays the host's file at the room's progress once its head arrives", () => {
     const { audio, listener, changes } = setup();
     listener.follow(item(LINK_A, 30_000));
     expect(audio.src).toBe("");
@@ -107,7 +134,7 @@ describe("listening along", () => {
     expect(audio.currentTime).toBe(35); // 30 s reported 5 s ago
   });
 
-  it("seeks again only when more than 2 s off", () => {
+  it("LISTEN-08 seeks again only when more than 2 s off", () => {
     const { audio, listener, advance } = setup();
     listener.follow(item(LINK_A, 30_000));
     listener.start();
@@ -121,7 +148,7 @@ describe("listening along", () => {
     expect(audio.currentTime).toBe(36);
   });
 
-  it("follows the host's pause, a new track and a host that stops sharing", () => {
+  it("LISTEN-08 LISTEN-10 follows the host's pause, a new track and a host that stops sharing", () => {
     const { audio, listener } = setup();
     listener.start();
     listener.follow(item(LINK_A, 30_000));
@@ -137,7 +164,7 @@ describe("listening along", () => {
     expect(listener.isListening).toBe(true);
   });
 
-  it("a pause from outside ends the listening; its own pauses and the end of a file do not", () => {
+  it("LISTEN-11 a pause from outside ends the listening; its own pauses and the end of a file do not", () => {
     const { audio, listener, changes, advance } = setup();
     listener.start();
     listener.follow(item(LINK_A, 30_000));

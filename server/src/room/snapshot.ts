@@ -28,17 +28,18 @@ export function toSnapshot(room: RoomState): SnapshotData {
       kicked: [...room.kicked],
       queue: room.queue.map((item) => ({ ...item })),
       recent: [...room.recent],
-      // The listening link expires in an hour: a room raised from a snapshot waits for a new one.
-      nowPlaying: withoutListenUrl(room.nowPlaying),
+      // LISTEN-06: the links expire within the hour; a raised room waits for new ones.
+      nowPlaying: withoutListenUrls(room.nowPlaying),
       fallback: { seeds: [...room.fallback.seeds], seedsVersion: room.fallback.seedsVersion },
     },
   };
 }
 
-/** nowPlaying without its listening link (listening along, experimental). */
-export function withoutListenUrl(nowPlaying: NowPlaying): NowPlaying {
+/** nowPlaying without the links of listening along (spec/jam/listen.md). */
+export function withoutListenUrls(nowPlaying: NowPlaying): NowPlaying {
   const copy = { ...nowPlaying };
   delete copy.listenUrl;
+  delete copy.listenNextUrl;
   return copy;
 }
 

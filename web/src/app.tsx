@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
+import type { NowPlaying as Playing } from "../../server/src/protocol/generated/types.js";
 import { Window } from "./components/chrome.js";
 import { JoinForm } from "./components/join-form.js";
 import { NowPlaying } from "./components/now-playing.js";
@@ -14,7 +15,9 @@ import {
   text,
   type Language,
 } from "./i18n.js";
+import { coverUrl } from "./format.js";
 import { parseJoinLink, socketUrl, type JoinLink } from "./link.js";
+import { Listener } from "./listen.js";
 import { browserEnvironment } from "./protocol/client.js";
 import { JamSession, type SessionView } from "./session.js";
 
@@ -27,6 +30,25 @@ function storage(): Storage | null {
   } catch {
     return null;
   }
+}
+
+/** The track on the phone's lock screen and in its media controls while this device listens. */
+function showOnLockScreen(playing: Playing | null): void {
+  const session = navigator.mediaSession as MediaSession | undefined;
+  if (!session) {
+    return;
+  }
+  const track = playing && playing.source !== "idle" ? playing.track : undefined;
+  if (!track) {
+    session.metadata = null;
+    return;
+  }
+  const cover = coverUrl(track.coverUri, 400);
+  session.metadata = new MediaMetadata({
+    title: track.title,
+    artist: track.artists.join(", "),
+    artwork: cover ? [{ src: cover, sizes: "400x400", type: "image/jpeg" }] : [],
+  });
 }
 
 function Room({
@@ -42,6 +64,30 @@ function Room({
 }) {
   const room = view.room;
   const serverNow = useCallback(() => session.serverNow(), [session]);
+  const [listening, setListening] = useState(false);
+  const listener = useMemo(
+    () => new Listener(new Audio(), serverNow, () => performance.now(), setListening),
+    [serverNow],
+  );
+  useEffect(() => {
+    if (room) {
+      listener.follow(room.nowPlaying);
+      showOnLockScreen(listening ? room.nowPlaying : null);
+    }
+  }, [listener, room, listening]);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      listener.sync();
+    }, 1_000);
+    const session = navigator.mediaSession as MediaSession | undefined;
+    session?.setActionHandler("pause", () => {
+      listener.stop();
+    });
+    return () => {
+      window.clearInterval(timer);
+      listener.stop();
+    };
+  }, [listener]);
   const names = useMemo(
     () =>
       new Map(room?.participants.map((participant) => [participant.publicId, participant.name])),
@@ -77,6 +123,14 @@ function Room({
         serverNow={serverNow}
         onSkip={(itemId) => {
           session.skip(itemId);
+        }}
+        listening={listening}
+        onListen={(on) => {
+          if (on) {
+            listener.start();
+          } else {
+            listener.stop();
+          }
         }}
       />
       <QueueList

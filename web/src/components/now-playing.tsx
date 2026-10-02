@@ -10,9 +10,11 @@ type Props = {
   readonly names: ReadonlyMap<string, string>;
   readonly serverNow: () => number;
   readonly onSkip: (itemId: string) => void;
+  readonly listening: boolean;
+  readonly onListen: (on: boolean) => void;
 };
 
-export function NowPlaying({ t, room, names, serverNow, onSkip }: Props) {
+export function NowPlaying({ t, room, names, serverNow, onSkip, listening, onListen }: Props) {
   const [now, setNow] = useState(serverNow());
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -68,6 +70,22 @@ export function NowPlaying({ t, room, names, serverNow, onSkip }: Props) {
           style={{ width: `calc(${(100 * position) / Math.max(1, track.durationMs)}% - 8px)` }}
         />
       </div>
+      {playing.listenUrl || listening ? (
+        <>
+          <button
+            class="btn btn-wide"
+            type="button"
+            aria-pressed={listening}
+            onClick={() => {
+              onListen(!listening);
+            }}
+          >
+            <Icon name={listening ? "square" : "headphones"} />
+            {listening ? t("stopListening") : t("listen")}
+          </button>
+          {listening ? null : <p class="note">{t("listenHint")}</p>}
+        </>
+      ) : null}
       {canSkip ? (
         <button
           class="btn btn-wide"

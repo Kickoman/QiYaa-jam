@@ -14,6 +14,8 @@ export type FakeHostOptions = {
   readonly catalog: readonly Track[];
   readonly speed: number;
   readonly log?: (line: string) => void;
+  /** Listening along (experimental): the file a guest may play for a track. */
+  readonly listenUrl?: (track: Track) => string;
 };
 
 export type Session = {
@@ -330,6 +332,8 @@ export class FakeHost {
     if (!current || !this.online) {
       return;
     }
+    const link = this.options.listenUrl?.(current.track);
+    const listen = link === undefined ? {} : { listenUrl: link };
     if (current.kind === "item") {
       this.send({
         type: "playing",
@@ -337,6 +341,7 @@ export class FakeHost {
         itemId: current.itemId,
         positionMs: 0,
         paused: false,
+        ...listen,
       });
     } else {
       this.send({
@@ -345,6 +350,7 @@ export class FakeHost {
         track: current.track,
         positionMs: 0,
         paused: false,
+        ...listen,
       });
     }
   }

@@ -1,4 +1,4 @@
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,12 +36,13 @@ class World {
     this.server = null;
   }
 
-  host(): FakeHost {
+  host(listenUrl?: (track: { readonly id: string }) => string): FakeHost {
     const host = new FakeHost({
       url: `ws://127.0.0.1:${this.port}/ws`,
       name: "Маша",
       catalog,
       speed: 1,
+      ...(listenUrl ? { listenUrl } : {}),
     });
     this.hosts.push(host);
     return host;
@@ -117,6 +118,37 @@ test("two guests join, add in turns and follow the host going away and back", as
   for (const page of [anya, borya]) {
     await expect(page.locator(".banner", { hasText: "Гаспадар не ў сетцы" })).toBeHidden();
   }
+  await world.end();
+});
+
+test("listening along (experimental): a guest plays the host's file, shown on the lock screen", async ({
+  browser,
+}) => {
+  const world = new World();
+  await world.startServer(false);
+  const host = world.host(
+    (track) =>
+      `https://s1.storage.yandex.net/get-mp3/0123456789abcdef0123456789abcdef/65cd937b03427/${track.id}.mp3`,
+  );
+  const session = await host.create();
+  const anya = await guest(browser, session, "Аня");
+  const files: string[] = [];
+  const mp3 = readFileSync(new URL("fixtures/sine440_3s.mp3", import.meta.url));
+  await anya.route("https://*.storage.yandex.net/**", async (route) => {
+    files.push(new URL(route.request().url()).pathname);
+    await route.fulfill({ status: 200, contentType: "audio/mpeg", body: mp3 });
+  });
+  const title = await addFirst(anya, "Queen", 0);
+  const now = anya.locator("section.now");
+  await now.locator("button", { hasText: "Слухаць тут" }).click();
+  const stop = now.locator("button", { hasText: "Спыніць" });
+  await expect(stop).toBeVisible();
+  await expect.poll(() => files.length).toBeGreaterThan(0);
+  await expect
+    .poll(() => anya.evaluate(() => navigator.mediaSession.metadata?.title ?? null))
+    .toBe(title);
+  await stop.click();
+  await expect(now.locator("button", { hasText: "Слухаць тут" })).toBeVisible();
   await world.end();
 });
 

@@ -129,6 +129,23 @@ describe("the host goes away and comes back", () => {
 });
 
 describe("snapshots", () => {
+  it("a snapshot leaves out the listening link, which expires within the hour", () => {
+    const { jam } = evening();
+    jam.send(HOST, {
+      type: "playing",
+      source: "item",
+      itemId: "i1",
+      positionMs: 1_000,
+      paused: false,
+      listenUrl:
+        "https://s963sas.storage.yandex.net/get-mp3/0123456789abcdef0123456789abcdef/00065cd937b03427/rmusic/track.mp3",
+    });
+    expect(jam.room.nowPlaying.listenUrl).toBeDefined();
+    const snapshot = toSnapshot(jam.room);
+    expect(isSnapshotData(snapshot)).toBe(true);
+    expect(snapshot.room.nowPlaying.listenUrl).toBeUndefined();
+  });
+
   it("the snapshot passes its schema and holds no secret", () => {
     const { jam } = evening();
     jam.send(HOST, { type: "kick", id: "h1", publicId: jam.room.participants[1]?.publicId ?? "" });

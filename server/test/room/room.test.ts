@@ -601,6 +601,62 @@ describe("what plays", () => {
   });
 });
 
+describe("listening along (experimental)", () => {
+  const link = (name: string) =>
+    `https://s963sas.storage.yandex.net/get-mp3/0123456789abcdef0123456789abcdef/00065cd937b03427/rmusic/${name}.mp3`;
+
+  it("the host's listenUrl goes into nowPlaying until a playing without one", () => {
+    const jam = new RoomHarness();
+    jam.add(HOST, "1");
+    jam.send(HOST, { type: "started", itemId: "i1" });
+    const report = { type: "playing", source: "item", itemId: "i1", paused: false } as const;
+    jam.send(HOST, { ...report, positionMs: 0, listenUrl: link("one") });
+    expect(jam.room.nowPlaying.listenUrl).toBe(link("one"));
+    jam.send(HOST, { ...report, positionMs: 10_000 });
+    expect(jam.room.nowPlaying).toMatchObject({ itemId: "i1", positionMs: 10_000 });
+    expect(jam.room.nowPlaying.listenUrl).toBeUndefined();
+  });
+
+  it("a wave track carries its own link, and idle none", () => {
+    const jam = new RoomHarness();
+    jam.send(HOST, {
+      type: "playing",
+      source: "wave",
+      track: track("777"),
+      positionMs: 0,
+      paused: false,
+      listenUrl: link("wave"),
+    });
+    expect(jam.room.nowPlaying.listenUrl).toBe(link("wave"));
+    jam.send(HOST, {
+      type: "playing",
+      source: "idle",
+      positionMs: 0,
+      paused: true,
+      listenUrl: link("idle"),
+    });
+    expect(jam.room.nowPlaying.listenUrl).toBeUndefined();
+  });
+
+  it("the next item starts without the previous item's link", () => {
+    const jam = new RoomHarness();
+    jam.add(HOST, "1");
+    jam.add(HOST, "2");
+    jam.send(HOST, { type: "started", itemId: "i1" });
+    jam.send(HOST, {
+      type: "playing",
+      source: "item",
+      itemId: "i1",
+      positionMs: 0,
+      paused: false,
+      listenUrl: link("one"),
+    });
+    jam.send(HOST, { type: "started", itemId: "i2" });
+    expect(jam.room.nowPlaying).toMatchObject({ itemId: "i2" });
+    expect(jam.room.nowPlaying.listenUrl).toBeUndefined();
+  });
+});
+
 describe("skip", () => {
   function playing(settings = { guestsCanSkip: true }): { jam: RoomHarness; anya: string } {
     const jam = new RoomHarness(settings);

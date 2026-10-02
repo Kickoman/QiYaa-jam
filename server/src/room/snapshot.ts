@@ -1,4 +1,4 @@
-import type { SnapshotData } from "../protocol/generated/types.js";
+import type { NowPlaying, SnapshotData } from "../protocol/generated/types.js";
 import { ROOM_MAX_AGE_MS } from "./limits.js";
 import { itemNumber } from "./ordering.js";
 import { nextFallback } from "./seeds.js";
@@ -28,10 +28,18 @@ export function toSnapshot(room: RoomState): SnapshotData {
       kicked: [...room.kicked],
       queue: room.queue.map((item) => ({ ...item })),
       recent: [...room.recent],
-      nowPlaying: room.nowPlaying,
+      // The listening link expires in an hour: a room raised from a snapshot waits for a new one.
+      nowPlaying: withoutListenUrl(room.nowPlaying),
       fallback: { seeds: [...room.fallback.seeds], seedsVersion: room.fallback.seedsVersion },
     },
   };
+}
+
+/** nowPlaying without its listening link (listening along, experimental). */
+export function withoutListenUrl(nowPlaying: NowPlaying): NowPlaying {
+  const copy = { ...nowPlaying };
+  delete copy.listenUrl;
+  return copy;
 }
 
 export function snapshotProblem(data: SnapshotData, now: number): string | null {

@@ -13,7 +13,7 @@ const JAM = "https://github.com/Kickoman/QiYaa-jam";
 const en = {
   title: "QiYaa: Yandex Music in a Winamp-style player",
   description:
-    "A free, open-source Yandex Music player in the style of the 2000s for Linux, Windows, macOS and Android, with jams: a shared queue for a party.",
+    "A free, open-source Yandex Music player in the style of the 2000s for Linux, Windows, macOS and Android. With the jam, friends share one playlist at a party.",
   languageLabel: "Language",
   navFeatures: "Features",
   navJam: "Jam",
@@ -25,12 +25,12 @@ const en = {
 
   heroTagline: "Yandex Music in that player from the 2000s.",
   heroText:
-    "Listen to My Vibe, liked tracks and playlists, search for artists and change skins. A native C++ and Qt 6 app: the windows are quick and never slide off the screen. There is an Android version too, and jams: a shared queue for a party.",
+    "Listen to My Vibe, liked tracks and playlists, search for artists and change skins. A native C++ and Qt 6 app, fast and light. There’s an Android version, and there’s the jam, which should have existed long ago.",
   heroFree: "· free and open source",
-  screenshotAlt: "The main window of QiYaa with the default skin, its colours matched to the site",
+  screenshotAlt: "The main window of QiYaa with the default skin",
 
   getTitle: "Get it",
-  getText: `Ready-made builds are on GitHub Releases; the buttons download the latest one. Linux: X11 and Wayland. How to install: <a href="${DESKTOP}/blob/master/docs/install.md">docs/install.md</a> (in Russian).`,
+  getText: `Ready-made builds are on GitHub Releases, and the buttons download the latest one. How to install: <a href="${DESKTOP}/blob/master/docs/install.md">docs/install.md</a> (in Russian).`,
   rowWindowsSetup: "x64 · installer",
   rowWindowsZip: "x64 · portable zip",
   rowMac: "arm64 · dmg · best effort",
@@ -38,7 +38,7 @@ const en = {
   buildText: `You need CMake 3.21+, a C++20 compiler and Qt 6.4 or newer. Other systems: <a href="${DESKTOP}/blob/master/docs/building.md">docs/building.md</a>.`,
 
   featuresTitle: "Features",
-  feature1: "Log in with a code: no password in the app",
+  feature1: "Log in with a code, no password in the app",
   feature2: "My Vibe, Wheel of vibes, stations and search",
   feature3: "Liked, playlists, albums, artists",
   feature4: ".wsz skins: built-in and your own",
@@ -46,13 +46,13 @@ const en = {
   feature6: "Spectrum, oscilloscope and Milkdrop",
   feature7: "No gaps between tracks",
   feature8: "Media keys and the system player",
-  feature9: "Windows dock and stay on the screen",
-  feature10: "Jam: a shared queue for a party",
+  feature9: "Windows dock like in the original Winamp",
+  feature10: "Jam: a shared play queue for a party",
   feature11: "Belarusian, Russian and English",
 
   jamTitle: "Jam",
   jamLead:
-    "A shared queue for a party: friends add tracks from their phones, and the music plays from QiYaa on your computer or Android phone.",
+    "A shared play queue for a party: friends add tracks from their phones, and the music plays from QiYaa on your device.",
   jamStep1Title: "Start",
   jamStep1Text:
     "Start a jam in QiYaa on your computer or phone and pick the name the guests will see.",
@@ -61,10 +61,10 @@ const en = {
     "Show the QR code or send the link. Guests need neither the app nor a Yandex account: a browser is enough.",
   jamStep3Title: "Add tracks",
   jamStep3Text:
-    "Guests search Yandex Music and add tracks to the queue. They play in turns, one from each guest, or first come, first served.",
+    "Guests search Yandex Music and add tracks to the queue. They play in turns, one from each guest, or in the order they were added.",
   jamStep4Title: "Jam vibe",
   jamStep4Text:
-    "When the guests’ tracks run out, the jam vibe plays: a vibe that follows what they added.",
+    "When the guests’ tracks run out, the jam vibe plays, picked to match what they added.",
   jamListenTitle: "Listen here",
   jamListenText:
     "If the host allows it, a guest taps Listen here and hears the same music on their phone, roughly in time with the host.",
@@ -89,7 +89,7 @@ const en = {
     "QiYaa shows a code, and you confirm it in a browser at ya.ru/device. You never type your password into the app. If Yaamp was installed before, QiYaa picks up its login by itself.",
   faqSkinsQ: "Where do I get skins?",
   faqSkinsA:
-    'Any classic .wsz skin works, for example from the <a href="https://skins.webamp.org">skins.webamp.org</a> archive. Load the file from the player’s menu; QiYaa remembers the choice.',
+    'Any skin in the classic .wsz format works, for example from the <a href="https://skins.webamp.org">skins.webamp.org</a> archive. Load the file from the player’s menu, and QiYaa will remember it.',
   faqGuestsQ: "Do jam guests need Yandex Music?",
   faqGuestsA:
     "No. Guests search through the host’s account, and the music plays at the host’s. To listen along on their own phone, the host has to allow it.",
@@ -195,7 +195,7 @@ const be: Texts = {
 const ru: Texts = {
   title: "QiYaa: Яндекс Музыка в плеере в стиле Winamp",
   description:
-    "Бесплатный плеер Яндекс Музыки с открытым кодом в стиле 2000-х для Linux, Windows, macOS и Android, с джемами — общей очередью для компании.",
+    "Бесплатный плеер Яндекс Музыки с открытым кодом в стиле 2000-х для Linux, Windows, macOS и Android, с джемом — общим плейлистом для компании.",
   languageLabel: "Язык",
   navFeatures: "Возможности",
   navJam: "Джем",
@@ -207,53 +207,53 @@ const ru: Texts = {
 
   heroTagline: "Яндекс Музыка в том самом плеере из 2000-х.",
   heroText:
-    "Слушайте Мою волну, любимые треки и плейлисты, ищите исполнителей и меняйте скины. Нативное приложение на C++ и Qt 6: окна не тормозят и не уезжают за экран. Есть версия для Android и джем — общая очередь для компании.",
+    "Слушайте Мою волну, любимые треки и плейлисты, ищите исполнителей и меняйте скины. Нативное приложение на C++ и Qt 6, быстрое и лёгкое. Есть версия для Android и джем — то, что надо было сделать уже давно.",
   heroFree: "· бесплатно, открытый код",
-  screenshotAlt: "Главное окно QiYaa со скином по умолчанию, цвета подогнаны под сайт",
+  screenshotAlt: "Главное окно QiYaa со скином по умолчанию",
 
   getTitle: "Скачать",
-  getText: `Готовые сборки лежат в GitHub Releases, кнопки скачивают последнюю. Linux — X11 и Wayland. Как установить — <a href="${DESKTOP}/blob/master/docs/install.md">docs/install.md</a>.`,
+  getText: `Готовые сборки лежат в GitHub Releases, кнопки скачивают последнюю. Как установить: <a href="${DESKTOP}/blob/master/docs/install.md">docs/install.md</a>.`,
   rowWindowsSetup: "x64 · установщик",
   rowWindowsZip: "x64 · zip без установки",
   rowMac: "arm64 · dmg · по мере сил",
   buildTitle: "Собрать",
-  buildText: `Нужны CMake 3.21+, компилятор C++20 и Qt 6.4 или новее. Другие системы — <a href="${DESKTOP}/blob/master/docs/building.md">docs/building.md</a>.`,
+  buildText: `Нужны CMake 3.21+, компилятор C++20 и Qt 6.4 или новее. Другие системы: <a href="${DESKTOP}/blob/master/docs/building.md">docs/building.md</a>.`,
 
   featuresTitle: "Возможности",
-  feature1: "Вход по коду — без пароля в приложении",
+  feature1: "Вход по коду, без пароля в приложении",
   feature2: "Моя волна, Колесо волн, станции и поиск",
   feature3: "«Мне нравится», плейлисты, альбомы, исполнители",
-  feature4: "Скины .wsz — встроенные и свои",
+  feature4: "Скины .wsz: встроенные и свои",
   feature5: "Эквалайзер на 10 полос с пресетами",
   feature6: "Спектр, осциллограф и Milkdrop",
   feature7: "Без пауз между треками",
   feature8: "Медиаклавиши и системный плеер",
-  feature9: "Окна стыкуются и не уезжают за экран",
-  feature10: "Джем — общая очередь для компании",
+  feature9: "Окна стыкуются, как в оригинальном винампе",
+  feature10: "Джем: общая очередь воспроизведения для компании",
   feature11: "Белорусский, русский и английский",
 
   jamTitle: "Джем",
   jamLead:
-    "Общая очередь для компании: друзья добавляют треки со своих телефонов, а музыка играет из QiYaa на вашем компьютере или Android-телефоне.",
+    "Общая очередь воспроизведения для компании: друзья добавляют треки со своих телефонов, а музыка играет из QiYaa на вашем устройстве.",
   jamStep1Title: "Начните",
   jamStep1Text:
     "Начните джем в QiYaa на компьютере или телефоне и выберите имя, которое увидят гости.",
   jamStep2Title: "Пригласите",
   jamStep2Text:
-    "Покажите QR-код или отправьте ссылку. Гостям не нужны ни приложение, ни аккаунт Яндекса: хватит браузера.",
+    "Покажите QR-код или отправьте ссылку. Гостям не нужны ни приложение, ни аккаунт Яндекса: достаточно браузера.",
   jamStep3Title: "Треки",
   jamStep3Text:
-    "Гости ищут в Яндекс Музыке и добавляют треки в очередь. Они играют по очереди, по одному от каждого гостя, или кто первый.",
+    "Гости ищут в Яндекс Музыке и добавляют треки в очередь. Они играют по очереди, по одному от каждого гостя, или кто первый добавит.",
   jamStep4Title: "Волна",
   jamStep4Text:
-    "Когда треки гостей кончатся, играет волна джема — подобранная по тому, что они добавляли.",
+    "Когда треки гостей кончатся, играет волна джема, подобранная по тому, что они добавляли.",
   jamListenTitle: "Слушать здесь",
   jamListenText:
     "Если хозяин разрешил, гость нажимает «Слушать здесь» и слышит ту же музыку на своём телефоне, примерно одновременно с хозяином.",
   jamNote: `До 30 гостей в одном джеме. Хозяин решает, в каком порядке играют треки, могут ли гости пропускать и кого пускать. Сервер джема тоже с открытым кодом: <a href="${JAM}">Kickoman/QiYaa-jam</a>.`,
 
   androidLead:
-    "QiYaa для Android: та же Яндекс Музыка в кармане. Вместо скинов — свой интерфейс: тёмные панели, LED-индикаторы и один цвет акцента.",
+    "QiYaa для Android: та же Яндекс Музыка в кармане. Вместо скинов у него свой интерфейс: тёмные панели, LED-индикаторы и один цвет акцента.",
   androidFeature1:
     "Моя волна, «Мне нравится», «Для вас», Колесо волн, плейлисты, исполнители, альбомы, станции, поиск",
   androidFeature2: "Эквалайзер на 10 полос с 17 пресетами, спектр и осциллограф",
@@ -270,7 +270,7 @@ const ru: Texts = {
     "QiYaa покажет код, вы подтверждаете его в браузере на ya.ru/device. Пароль в приложение вводить не нужно. Если раньше стоял Yaamp, вход подхватится сам.",
   faqSkinsQ: "Где взять скины?",
   faqSkinsA:
-    'Подходит любой скин классического формата .wsz — например, из архива <a href="https://skins.webamp.org">skins.webamp.org</a>. Загрузите файл через меню плеера, выбор запомнится.',
+    'Подходит любой скин классического формата .wsz. Например, из архива <a href="https://skins.webamp.org">skins.webamp.org</a>. Загрузите файл через меню плеера, выбор запомнится.',
   faqGuestsQ: "Нужна ли гостям джема Яндекс Музыка?",
   faqGuestsA:
     "Нет. Гости ищут через аккаунт хозяина, а музыка играет у хозяина. Чтобы слушать на своём телефоне, нужно, чтобы хозяин это разрешил.",

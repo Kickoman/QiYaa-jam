@@ -1,6 +1,6 @@
 // The landing's texts: one dictionary per language, the same keys in each. `page.html` names them
 // as {{key}}; values may hold inline HTML (links, <b>), and the ones in attributes (title,
-// description, screenshotAlt) hold none. Words follow the apps' glossary
+// description, screenshotAlt, download and the rows' labels) hold none. Words follow the apps' glossary
 // (Kickoman/QiYaa translations/README.md): My Vibe / Мая хваля / Моя волна, never "wave".
 
 export type SiteLanguage = "be" | "ru" | "en";
@@ -34,7 +34,6 @@ const en = {
   rowWindowsSetup: "x64 · installer",
   rowWindowsZip: "x64 · portable zip",
   rowMac: "arm64 · dmg · best effort",
-  get: "Get",
   buildTitle: "Build it",
   buildText: `You need CMake 3.21+, a C++20 compiler and Qt 6.4 or newer. Other systems: <a href="${DESKTOP}/blob/master/docs/building.md">docs/building.md</a>.`,
 
@@ -128,7 +127,6 @@ const be: Texts = {
   rowWindowsSetup: "x64 · усталёўшчык",
   rowWindowsZip: "x64 · zip без усталёўкі",
   rowMac: "arm64 · dmg · як атрымаецца",
-  get: "Узяць",
   buildTitle: "Сабраць",
   buildText: `Патрэбныя CMake 3.21+, кампілятар C++20 і Qt 6.4 ці навейшы. Іншыя сістэмы — <a href="${DESKTOP}/blob/master/docs/building.md">docs/building.md</a>.`,
 
@@ -218,7 +216,6 @@ const ru: Texts = {
   rowWindowsSetup: "x64 · установщик",
   rowWindowsZip: "x64 · zip без установки",
   rowMac: "arm64 · dmg · по мере сил",
-  get: "Скачать",
   buildTitle: "Собрать",
   buildText: `Нужны CMake 3.21+, компилятор C++20 и Qt 6.4 или новее. Другие системы — <a href="${DESKTOP}/blob/master/docs/building.md">docs/building.md</a>.`,
 

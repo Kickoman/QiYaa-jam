@@ -98,7 +98,8 @@ test("the download buttons take the newest release's files and show its version"
   await page.goto(`${BASE}/en`);
   await expect(page.locator('[data-version="desktop"]')).toHaveText("Version 9.8.7 ·");
   await expect(page.locator('[data-version="android"]')).toHaveText("Android · Version 6.5.4");
-  await expect(page.locator('a[data-download="deb"]')).toHaveAttribute(
+  // The row's button is an icon; its name says what it downloads.
+  await expect(page.getByRole("link", { name: "Download: Linux, .deb" })).toHaveAttribute(
     "href",
     "https://github.com/Kickoman/QiYaa/releases/download/v9.8.7/qiyaa_9.8.7_amd64.deb",
   );

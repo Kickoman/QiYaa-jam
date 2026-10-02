@@ -284,6 +284,16 @@ a:hover {
   height: 12px;
 }
 
+.btn-icon {
+  width: 32px;
+  padding: 0;
+}
+
+.btn-icon .icon {
+  width: 14px;
+  height: 14px;
+}
+
 .btn-lg {
   height: 56px;
   padding: 0 var(--space-12);

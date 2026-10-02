@@ -41,8 +41,18 @@ describe("landing texts", () => {
 
   it("texts in attributes hold no markup or quotes", () => {
     for (const language of SITE_LANGUAGES) {
-      const { title, description, screenshotAlt, languageLabel } = SITE_TEXTS[language];
-      for (const value of [title, description, screenshotAlt, languageLabel]) {
+      const texts = SITE_TEXTS[language];
+      const inAttributes = [
+        texts.title,
+        texts.description,
+        texts.screenshotAlt,
+        texts.languageLabel,
+        texts.download,
+        texts.rowWindowsSetup,
+        texts.rowWindowsZip,
+        texts.rowMac,
+      ];
+      for (const value of inAttributes) {
         expect(value).not.toMatch(/["<>]/);
       }
     }

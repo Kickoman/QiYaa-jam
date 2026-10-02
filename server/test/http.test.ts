@@ -8,7 +8,14 @@ import { createHttpServer } from "../src/net/http.js";
 
 const webRoot = mkdtempSync(join(tmpdir(), "jam-web-"));
 mkdirSync(join(webRoot, "assets"));
+mkdirSync(join(webRoot, "site"));
 writeFileSync(join(webRoot, "index.html"), "<!doctype html><title>jam</title>");
+for (const language of ["be", "ru", "en"]) {
+  writeFileSync(
+    join(webRoot, "site", `${language}.html`),
+    `<!doctype html><html lang="${language}">`,
+  );
+}
 writeFileSync(join(webRoot, "assets", "app-1a2b.js"), "console.log(1)");
 writeFileSync(join(tmpdir(), "outside-web-root.txt"), "secret");
 
@@ -41,16 +48,32 @@ describe("http", () => {
     expect(await response.text()).toBe("ok\n");
   });
 
-  it("serves the web guest at / and /j/<roomId>, and its assets", async () => {
-    for (const path of ["/", "/j/7k3m9q2x"]) {
+  it("ROOM-62 serves the landing at /, /ru and /en, the web guest at /j/<roomId>, and their assets", async () => {
+    const pages = [
+      ["/", '<html lang="be">'],
+      ["/ru", '<html lang="ru">'],
+      ["/en", '<html lang="en">'],
+      ["/j/7k3m9q2x", "<title>jam</title>"],
+    ] as const;
+    for (const [path, content] of pages) {
       const response = await fetch(base + path);
-      expect(response.status).toBe(200);
+      expect(response.status, path).toBe(200);
       expect(response.headers.get("content-type")).toBe("text/html; charset=utf-8");
-      expect(await response.text()).toContain("<title>jam</title>");
+      expect(response.headers.get("cache-control")).toBe("no-cache");
+      expect(await response.text()).toContain(content);
     }
     const asset = await fetch(`${base}/assets/app-1a2b.js`);
     expect(asset.status).toBe(200);
     expect(asset.headers.get("cache-control")).toContain("immutable");
+  });
+
+  it("ROOM-62 answers HEAD like GET, without a body", async () => {
+    for (const path of ["/", "/j/7k3m9q2x", "/healthz"]) {
+      const response = await fetch(base + path, { method: "HEAD" });
+      expect(response.status, path).toBe(200);
+      expect(await response.text()).toBe("");
+    }
+    expect((await fetch(`${base}/missing`, { method: "HEAD" })).status).toBe(404);
   });
 
   it("serves assetlinks.json from the environment", async () => {
@@ -65,6 +88,9 @@ describe("http", () => {
       "/.env",
       "/healthz/x",
       "/j/NOTAROOM",
+      "/be",
+      "/ru/",
+      "/site/be.html",
       "/assets/missing.js",
       "/assets/../../outside-web-root.txt",
       "/assets/%2e%2e/%2e%2e/outside-web-root.txt",
@@ -94,7 +120,7 @@ describe("http", () => {
   });
 
   it("without a web root or assetlinks, only /healthz answers", async () => {
-    for (const path of ["/", "/j/7k3m9q2x", "/.well-known/assetlinks.json"]) {
+    for (const path of ["/", "/ru", "/j/7k3m9q2x", "/.well-known/assetlinks.json"]) {
       expect((await fetch(bareBase + path)).status).toBe(404);
     }
     expect((await fetch(`${bareBase}/healthz`)).status).toBe(200);

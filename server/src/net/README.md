@@ -7,7 +7,7 @@
 | Файл | Что там |
 |---|---|
 | `server.ts` | `JamServer` — HTTP + WebSocket, реестр комнат, соединения, лимиты, таймеры |
-| `http.ts` | `createHttpServer` — `/healthz`, `assetlinks.json`, статика веб-гостя, остальное 404 |
+| `http.ts` | `createHttpServer` — `/healthz`, `assetlinks.json`, лендинг и веб-гость, остальное 404 |
 | `ids.ts` | `ids` — случайные `roomId`, `publicId`, секреты, id запросов и соединений |
 | `real-ip.ts` | `clientIp`, `parseTrustedProxies` — IP клиента с учётом `X-Real-IP` |
 | `rate-limit.ts` | `RateLimiter` (token bucket), `Violations` (нарушения и бан) |
@@ -99,13 +99,16 @@ Ping — каждые `PING_INTERVAL_MS`; соединение без pong до�
 function createHttpServer(options: { assetlinksJson: string | null; webRoot: string | null }): Server;
 ```
 
-| Путь | Ответ |
+| Путь (`GET` или `HEAD`) | Ответ |
 |---|---|
-| `GET /healthz` | 200 `ok` |
-| `GET /.well-known/assetlinks.json` | тело из `ASSETLINKS_JSON`, если задано |
-| `GET /`, `GET /j/<roomId>` | `webRoot/index.html`, `no-cache` |
-| `GET /assets/…` | файл из `webRoot/assets/`, кэш на год |
+| `/healthz` | 200 `ok` |
+| `/.well-known/assetlinks.json` | тело из `ASSETLINKS_JSON`, если задано |
+| `/`, `/ru`, `/en` | лендинг: `webRoot/site/be.html`, `ru.html`, `en.html`, `no-cache` |
+| `/j/<roomId>` | веб-гость: `webRoot/index.html`, `no-cache` |
+| `/assets/…` | файл из `webRoot/assets/`, кэш на год |
 | всё остальное | 404 с пустым телом (ROOM-62) |
+
+На `HEAD` Node сам не шлёт тело, поэтому `HEAD` идёт тем же путём, что `GET`.
 
 **Ловушки:**
 - Путь нормализуется и сверяется с `webRoot`: `..` наружу не выпускает, это проверяет тест с сырым

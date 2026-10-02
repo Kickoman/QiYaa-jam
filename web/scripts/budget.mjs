@@ -1,4 +1,5 @@
-// The web guest must stay under 100 KiB gzip without fonts: people open it on mobile data.
+// The web guest and the landing together stay under 100 KiB gzip without fonts and images:
+// people open them on mobile data.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join } from "node:path";
 import { gzipSync } from "node:zlib";
@@ -20,7 +21,7 @@ for (const path of files(dist)) {
     total += gzipSync(readFileSync(path), { level: 9 }).length;
   }
 }
-const line = `web budget: ${(total / 1024).toFixed(1)} KiB gzip of ${LIMIT_BYTES / 1024} KiB (fonts not counted)`;
+const line = `web budget: ${(total / 1024).toFixed(1)} KiB gzip of ${LIMIT_BYTES / 1024} KiB (fonts and images not counted)`;
 if (total > LIMIT_BYTES) {
   console.error(line);
   process.exit(1);

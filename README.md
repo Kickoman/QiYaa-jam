@@ -2,19 +2,19 @@
 
 Общая очередь для компании. Один QiYaa (ПК или Android) — хозяин: он играет музыку через свой
 аккаунт Яндекса. Гости сканируют QR-код и добавляют треки из браузера или из своего QiYaa. Здесь
-живут сервер джема, который держит комнату и её правила, и веб-страница гостя. Хозяин и гость в
+живут сервер джема, который держит комнату и её правила, веб-страница гостя и лендинг QiYaa,
+который сервер отдаёт на `/`. Хозяин и гость в
 приложениях — в [Kickoman/QiYaa](https://github.com/Kickoman/QiYaa) и
 [Kickoman/QiYaa-android](https://github.com/Kickoman/QiYaa-android).
 
 | Папка | Что там |
 |---|---|
 | [server/](server/README.md) | Сервер джема: Node 22, TypeScript, `ws` |
+| [web/](web/README.md) | Веб-гость (`/j/<roomId>`) и лендинг (`/`, `/ru`, `/en`) |
 | [deploy/](deploy/README.md) | Образ Docker, nginx, как джем живёт на VPS |
 | [tools/fake-host/](tools/fake-host/README.md) | Имитатор хозяина и сквозные тесты; `tools/rotor-spike/` — разведка ротора |
 | [docs/](docs/design/README.md) | Проект и план (`design/`), отчёты разведок (`spikes/`), [код-стайл](docs/code-style.md) |
 | `spec/` | Подмодуль [QiYaa-spec](https://github.com/Kickoman/QiYaa-spec): протокол, лимиты и сценарии в `spec/jam/` |
-
-Веб-гость (`web/`) появится в Kickoman/QiYaa-jam#13.
 
 ## Быстрый старт
 

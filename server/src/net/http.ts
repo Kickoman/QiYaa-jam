@@ -21,6 +21,13 @@ const CONTENT_TYPES: Readonly<Record<string, string>> = {
 
 const ROOM_PAGE = /^\/j\/[0-9a-hjkmnp-tv-z]{8}$/;
 
+/** The landing in each language (web/site); `/` is Belarusian, the apps' default. */
+const SITE_PAGES: ReadonlyMap<string, string> = new Map([
+  ["/", "site/be.html"],
+  ["/ru", "site/ru.html"],
+  ["/en", "site/en.html"],
+]);
+
 function notFound(response: ServerResponse): void {
   response.writeHead(404).end();
 }
@@ -56,7 +63,8 @@ async function route(
   response: ServerResponse,
 ): Promise<void> {
   const path = new URL(request.url ?? "/", "http://localhost").pathname;
-  if (request.method !== "GET") {
+  // Node sends no body in answer to HEAD.
+  if (request.method !== "GET" && request.method !== "HEAD") {
     notFound(response);
     return;
   }
@@ -72,7 +80,12 @@ async function route(
     notFound(response);
     return;
   }
-  if (path === "/" || ROOM_PAGE.test(path)) {
+  const sitePage = SITE_PAGES.get(path);
+  if (sitePage !== undefined) {
+    await sendFile(response, options.webRoot, sitePage, "no-cache");
+    return;
+  }
+  if (ROOM_PAGE.test(path)) {
     await sendFile(response, options.webRoot, "index.html", "no-cache");
     return;
   }

@@ -1,5 +1,5 @@
-# The jam server on the VPS. Variables come from .env next to this file (PUBLIC_URL, ASSETLINKS_JSON)
-# and from tag.env written by deploy.sh (JAM_TAG).
+# The jam server on the VPS. Variables come from .env next to this file (PUBLIC_URL, ASSETLINKS_JSON,
+# LOG_LEVEL) and from tag.env written by deploy.sh (JAM_TAG).
 services:
   jam:
     image: ghcr.io/kickoman/qiyaa-jam:${JAM_TAG:-edge}
@@ -12,12 +12,19 @@ services:
       PUBLIC_URL: ${PUBLIC_URL:?PUBLIC_URL must be set in .env}
       TRUSTED_PROXY: 172.30.90.1
       ASSETLINKS_JSON: ${ASSETLINKS_JSON:-}
+      SERVICE_NAME: qiyaa-jam
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JAM_VERSION: ${JAM_TAG:-edge}
     volumes:
       - data:/data
+    labels:
+      # The host's log collector reads only containers with this label.
+      logging: "true"
     logging:
       driver: json-file
       options:
-        max-size: 10m
+        # A local safety net: if the collector is down, logs still rotate.
+        max-size: 50m
         max-file: "3"
 
 networks:

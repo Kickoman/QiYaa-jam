@@ -12,6 +12,7 @@
 | `real-ip.ts` | `clientIp`, `parseTrustedProxies` — IP клиента с учётом `X-Real-IP` |
 | `rate-limit.ts` | `RateLimiter` (token bucket), `Violations` (нарушения и бан) |
 | `persistence.ts` | `saveRooms`, `takeRooms` — файл комнат на время планового перезапуска |
+| `room-log.ts` | `roomChanges`, `roomSummary`, `Tally` — события комнаты для логов из разницы двух состояний и итог комнаты |
 
 Зависимости: `net → room → protocol`. `ws` импортирует только `server.ts`.
 
@@ -53,7 +54,7 @@ type JamServerOptions = HttpOptions & {
 
 **Лимиты на новую комнату** (`create` и подъём из снимка, ROOM-02, ROOM-03): сначала
 `ROOMS_PER_SERVER` на сервер (`server-full`), затем `IP_LIVE_ROOMS` живых комнат и
-`IP_ROOMS_PER_HOUR` новых за час с IP соединения (`rate-limited`, в логе `rooms-limited`). Комната
+`IP_ROOMS_PER_HOUR` новых за час с IP соединения (`rate-limited`, в логе `rooms_limited`). Комната
 считается за IP, с которого её создали или подняли, всю жизнь: `roomIps` (только в памяти, не в
 снимке и не в файле комнат; после перезапуска старые комнаты ни за кем не числятся). Отказ не
 тратит лимит.

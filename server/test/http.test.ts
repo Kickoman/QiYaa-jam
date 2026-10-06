@@ -4,7 +4,14 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { configureLog } from "../src/log.js";
 import { createHttpServer } from "../src/net/http.js";
+
+const logged: Record<string, unknown>[] = [];
+configureLog({
+  write: (line) => logged.push(JSON.parse(line) as Record<string, unknown>),
+  level: "debug",
+});
 
 const webRoot = mkdtempSync(join(tmpdir(), "jam-web-"));
 mkdirSync(join(webRoot, "assets"));
@@ -20,7 +27,11 @@ writeFileSync(join(webRoot, "assets", "app-1a2b.js"), "console.log(1)");
 writeFileSync(join(tmpdir(), "outside-web-root.txt"), "secret");
 
 const assetlinks = '[{"relation":["delegate_permission/common.handle_all_urls"]}]';
-const server = createHttpServer({ assetlinksJson: assetlinks, webRoot });
+const server = createHttpServer({
+  assetlinksJson: assetlinks,
+  webRoot,
+  trustedProxies: new Set(["127.0.0.1"]),
+});
 const bare = createHttpServer({ assetlinksJson: null, webRoot: null });
 let base = "";
 let bareBase = "";
@@ -124,5 +135,55 @@ describe("http", () => {
       expect((await fetch(bareBase + path)).status).toBe(404);
     }
     expect((await fetch(`${bareBase}/healthz`)).status).toBe(200);
+  });
+});
+
+describe("http logs", () => {
+  async function requestLog(path: string, headers: Record<string, string> = {}) {
+    const before = logged.length;
+    await (await fetch(base + path, { headers })).arrayBuffer();
+    await expect.poll(() => logged.length).toBeGreaterThan(before);
+    return logged[logged.length - 1];
+  }
+
+  it("ROOM-63 one http_request per request, by route, never with a room id", async () => {
+    const page = await requestLog("/ru", {
+      "x-real-ip": "203.0.113.5",
+      referer: "https://t.me/somechat",
+    });
+    expect(page).toMatchObject({
+      service: "qiyaa-jam",
+      stream: "http_request",
+      level: "info",
+      event: "http_request",
+      http_method: "GET",
+      http_path: "/ru",
+      http_status: 200,
+      client_ip: "203.0.113.5",
+      peer_ip: "127.0.0.1",
+      referrer_host: "t.me",
+    });
+    expect(typeof page?.duration_ms).toBe("number");
+    const room = await requestLog("/j/7k3m9q2x");
+    expect(room).toMatchObject({ http_path: "/j/{roomId}", http_status: 200 });
+    expect(JSON.stringify(room)).not.toContain("7k3m9q2x");
+  });
+
+  it("an unknown path counts as /* and keeps what was asked, hiding a room id", async () => {
+    expect(await requestLog("/wp-login.php")).toMatchObject({
+      level: "info",
+      http_path: "/*",
+      http_status: 404,
+      raw_path: "/wp-login.php",
+    });
+    expect(await requestLog("/j/7k3m9q2x/")).toMatchObject({ http_path: "/*", raw_path: "/j/…" });
+  });
+
+  it("assets and /healthz are logged at debug, which the default level drops", async () => {
+    expect(await requestLog("/assets/app-1a2b.js")).toMatchObject({
+      level: "debug",
+      http_path: "/assets/*",
+    });
+    expect(await requestLog("/healthz")).toMatchObject({ level: "debug", http_path: "/healthz" });
   });
 });

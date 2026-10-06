@@ -17,6 +17,8 @@ if (assetlinksJson !== null) {
 }
 const dataDir = environment.DATA_DIR ?? "/data";
 
+const version = environment.JAM_VERSION || "dev";
+
 const server = new JamServer({
   publicUrl,
   trustedProxies: parseTrustedProxies(environment.TRUSTED_PROXY),
@@ -26,14 +28,17 @@ const server = new JamServer({
 });
 
 const address = await server.listen(port, host);
-log("listening", { host: address.address, port: address.port, publicUrl });
+// The log store counts restarts by this event (a crash loop is an alert).
+log.info("startup", { version, host: address.address, port: address.port, publicUrl });
 
 process.on("SIGTERM", () => {
-  log("sigterm", { rooms: server.roomCount });
+  log.info("shutdown", { rooms: server.roomCount });
   server.close().then(
     () => process.exit(0),
     (failed: unknown) => {
-      log("shutdown-failed", { error: failed instanceof Error ? failed.message : String(failed) });
+      log.error("shutdown_failed", {
+        error: failed instanceof Error ? failed.message : String(failed),
+      });
       process.exit(1);
     },
   );

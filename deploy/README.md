@@ -65,9 +65,14 @@ command="/home/<user>/qiyaa-jam/deploy.sh",no-port-forwarding,no-X11-forwarding,
 ```bash
 git tag v0.2.0 && git push origin v0.2.0      # обновление: CI делает всё сам
 ssh <vps> '~/qiyaa-jam/deploy.sh v0.1.0'      # откат на прошлый тег
-docker logs -f qiyaa-jam                      # логи: JSON-строки, по 10 МБ, три файла
+docker logs -f qiyaa-jam                      # логи: JSON-строки, по 50 МБ, три файла
 cat ~/qiyaa-jam/deployed.log                  # когда какой тег ставился
 ```
+
+Логи и метрики: контейнер помечен `logging: "true"`, и агент сбора логов на хосте отправляет его
+stdout в общее хранилище логов, где для джема есть свой дашборд. Какие события пишет сервер — в
+[server/README.md](../server/README.md#srclogts). `LOG_LEVEL` в `.env` меняет уровень (по
+умолчанию `info`).
 
 При `up -d` старый контейнер получает SIGTERM, пишет комнаты в `/data/rooms.json`, новый читает их
 при запуске (REC-10): гости и хозяин переподключаются и ничего не теряют. Том `data` переживает
@@ -77,7 +82,7 @@ cat ~/qiyaa-jam/deployed.log                  # когда какой тег с�
 
 Любое приложение QiYaa, без ключей и регистрации. Злоупотребления сдерживают лимиты
 (`spec/jam/limits.md`): не больше 20 комнат на сервер, 2 живых комнат и 5 новых в час с одного IP.
-Отказы видны в логах как `rooms-limited` с IP и числом живых комнат.
+Отказы видны в логах как `rooms_limited` с IP и числом живых комнат.
 
 ## nginx
 

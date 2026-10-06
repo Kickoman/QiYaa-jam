@@ -37,19 +37,24 @@ import { hashSecret } from "../room/secrets.js";
 import { fromSnapshot, snapshotProblem, toSnapshot } from "../room/snapshot.js";
 import type { Outcome, RoomContext, RoomEvent, RoomState } from "../room/types.js";
 import { stateFor } from "../room/view.js";
-import { createHttpServer, type HttpOptions } from "./http.js";
+import { createHttpServer, logRequest, type HttpOptions } from "./http.js";
 import { ids } from "./ids.js";
 import { saveRooms, takeRooms } from "./persistence.js";
 import { RateLimiter, Violations } from "./rate-limit.js";
 import { clientIp } from "./real-ip.js";
+import { newTally, roomChanges, roomSummary, type Tally } from "./room-log.js";
 
 export const PROTOCOL = 1;
+
+/** How often the server logs `jam_stats`, the gauges the dashboard shows as "now". */
+const STATS_INTERVAL_MS = 60_000;
 
 export type Timing = {
   readonly handshakeMs: number;
   readonly pingIntervalMs: number;
   readonly deadAfterMs: number;
   readonly snapshotIntervalMs: number;
+  readonly statsIntervalMs: number;
 };
 
 export type JamServerOptions = HttpOptions & {
@@ -74,6 +79,7 @@ class Connection {
     readonly id: string,
     readonly socket: WebSocket,
     readonly ip: string,
+    readonly openedAt: number,
     public lastPongAt: number,
   ) {}
 
@@ -122,11 +128,14 @@ export class JamServer {
   private readonly newRooms = new RateLimiter(IP_ROOMS_PER_HOUR, ROOM_RATE_WINDOW_MS);
   /** The IP that created or raised each live room (ROOM-02); not in the snapshot. */
   private readonly roomIps = new Map<string, string>();
+  /** What happened in each live room, for `room_ended`; not in the snapshot. */
+  private readonly tallies = new Map<string, Tally>();
   private readonly violations = new Violations(VIOLATIONS_BEFORE_BAN, BAN_MS);
   private readonly allowedOrigin: string;
   private readonly timing: Timing;
   private readonly now: () => number;
   private readonly pinger: NodeJS.Timeout;
+  private readonly statsTimer: NodeJS.Timeout;
 
   constructor(private readonly options: JamServerOptions) {
     this.now = options.now ?? Date.now;
@@ -135,6 +144,7 @@ export class JamServer {
       pingIntervalMs: PING_INTERVAL_MS,
       deadAfterMs: DEAD_AFTER_MS,
       snapshotIntervalMs: SNAPSHOT_INTERVAL_MS,
+      statsIntervalMs: STATS_INTERVAL_MS,
       ...options.timing,
     };
     this.allowedOrigin = new URL(options.publicUrl).origin;
@@ -146,6 +156,9 @@ export class JamServer {
       this.ping();
       this.expire();
     }, this.timing.pingIntervalMs);
+    this.statsTimer = setInterval(() => {
+      this.logStats();
+    }, this.timing.statsIntervalMs);
     if (options.roomsFile) {
       this.load(options.roomsFile);
     }
@@ -154,22 +167,23 @@ export class JamServer {
   private load(path: string): void {
     const taken = takeRooms(path);
     if (taken.problem !== null) {
-      log("rooms-file-broken", { problem: taken.problem });
+      log.error("rooms_file_broken", { problem: taken.problem });
     }
     const now = this.now();
     for (const data of taken.rooms) {
       if (!isSnapshotData(data)) {
-        log("room-not-loaded", { problem: "does not match the schema" });
+        log.warn("room_not_loaded", { problem: "does not match the schema" });
         continue;
       }
       const problem = snapshotProblem(data, now);
       if (problem !== null) {
-        log("room-not-loaded", { problem });
+        log.warn("room_not_loaded", { problem });
         continue;
       }
       this.rooms.set(data.room.id, fromSnapshot(data, now));
+      this.tallies.set(data.room.id, newTally(now, true));
     }
-    log("rooms-loaded", { rooms: this.rooms.size });
+    log.info("rooms_loaded", { rooms: this.rooms.size });
   }
 
   get roomCount(): number {
@@ -183,9 +197,10 @@ export class JamServer {
 
   async close(): Promise<void> {
     clearInterval(this.pinger);
+    clearInterval(this.statsTimer);
     if (this.options.roomsFile) {
       saveRooms(this.options.roomsFile, [...this.rooms.values()].map(toSnapshot), this.now());
-      log("rooms-saved", { rooms: this.rooms.size });
+      log.info("rooms_saved", { rooms: this.rooms.size });
     }
     for (const timer of this.snapshotTimers.values()) {
       clearTimeout(timer);
@@ -215,6 +230,7 @@ export class JamServer {
   }
 
   private upgrade(request: IncomingMessage, socket: Duplex, head: Buffer): void {
+    const startedAt = process.hrtime.bigint();
     const now = this.now();
     const path = new URL(request.url ?? "/", "http://localhost").pathname;
     const ip = clientIp(
@@ -223,7 +239,7 @@ export class JamServer {
       this.options.trustedProxies,
     );
     const refuse = (status: number, text: string, reason: string): void => {
-      log("upgrade-refused", { ip, status, reason });
+      logRequest(request, status, startedAt, this.options.trustedProxies, { reason });
       socket.end(`HTTP/1.1 ${status} ${text}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
     };
     if (path !== "/ws") {
@@ -248,12 +264,13 @@ export class JamServer {
       return;
     }
     this.sockets.handleUpgrade(request, socket, head, (webSocket) => {
+      logRequest(request, 101, startedAt, this.options.trustedProxies);
       this.open(webSocket, ip);
     });
   }
 
   private open(socket: WebSocket, ip: string): void {
-    const connection = new Connection(ids.connectionId(), socket, ip, this.now());
+    const connection = new Connection(ids.connectionId(), socket, ip, this.now(), this.now());
     this.connections.set(connection.id, connection);
     this.openPerIp.set(ip, (this.openPerIp.get(ip) ?? 0) + 1);
     connection.handshake = setTimeout(() => {
@@ -272,10 +289,10 @@ export class JamServer {
       if (failed.code === "WS_ERR_UNSUPPORTED_MESSAGE_LENGTH") {
         this.recordViolation(connection, 1009, "frame-size");
       } else {
-        log("socket-error", { connection: connection.id, error: failed.code ?? failed.name });
+        log.warn("ws_error", { connection: connection.id, error: failed.code ?? failed.name });
       }
     });
-    log("open", { connection: connection.id, ip });
+    log.debug("ws_open", { connection: connection.id, client_ip: ip });
   }
 
   private closed(connection: Connection, code: number): void {
@@ -287,16 +304,22 @@ export class JamServer {
     } else {
       this.openPerIp.delete(connection.ip);
     }
-    log("close", { connection: connection.id, code });
+    log.info("ws_close", {
+      connection: connection.id,
+      app: connection.app ?? "none",
+      role: connection.roomId === null ? "none" : connection.host ? "host" : "guest",
+      code,
+      seconds: Math.round((this.now() - connection.openedAt) / 1000),
+    });
     if (connection.roomId !== null && connection.publicId !== null) {
       this.dispatch(connection.roomId, { kind: "disconnected", publicId: connection.publicId });
     }
   }
 
   private recordViolation(connection: Connection, code: number, reason: string): void {
-    log("violation", { connection: connection.id, ip: connection.ip, code, reason });
+    log.warn("violation", { connection: connection.id, client_ip: connection.ip, code, reason });
     if (this.violations.record(connection.ip, this.now())) {
-      log("ban", { ip: connection.ip });
+      log.warn("ban", { client_ip: connection.ip });
     }
   }
 
@@ -306,7 +329,7 @@ export class JamServer {
   }
 
   private reject(connection: Connection, id: string | null, reason: Reason): void {
-    log("rejected", { connection: connection.id, reason });
+    log.info("rejected", { connection: connection.id, reason });
     connection.send(id === null ? { type: "rejected", reason } : { type: "rejected", id, reason });
   }
 
@@ -351,6 +374,11 @@ export class JamServer {
       return;
     }
     connection.app = message.app;
+    log.info("ws_hello", {
+      connection: connection.id,
+      app: message.app,
+      app_version: message.appVersion,
+    });
     connection.send({ type: "welcome", protocol: PROTOCOL, serverTime: this.now() });
   }
 
@@ -373,6 +401,13 @@ export class JamServer {
       if (message.type === "search" && !this.searches.take(key, now)) {
         this.reject(connection, message.id, "rate-limited");
         return;
+      }
+      if (message.type === "search") {
+        const tally = this.tallies.get(roomId);
+        if (tally) {
+          tally.searches++;
+        }
+        log.info("guest_search", { kind: connection.app === "web" ? "web" : "qiyaa" });
       }
     }
     this.dispatch(roomId, {
@@ -428,8 +463,17 @@ export class JamServer {
     if (outcome.room) {
       this.rooms.set(roomId, outcome.room);
       this.countRoom(roomId, connection.ip);
+      this.tallies.set(roomId, newTally(this.now(), false));
+      const { order, guestsCanSkip, joinOpen, maxPendingPerGuest } = outcome.room.settings;
+      log.info("room_created", {
+        rooms: this.rooms.size,
+        app: connection.app ?? "none",
+        order,
+        guests_can_skip: guestsCanSkip,
+        join_open: joinOpen,
+        max_pending: maxPendingPerGuest,
+      });
     }
-    log("room-created", { rooms: this.rooms.size });
     this.apply(roomId, outcome);
   }
 
@@ -459,7 +503,7 @@ export class JamServer {
       problem = snapshotProblem(snapshot, this.now());
     }
     if (snapshot === null || problem !== null) {
-      log("not-restored", { problem });
+      log.info("room_not_restored", { problem });
       this.reject(connection, message.id, "room-not-found");
       return;
     }
@@ -472,7 +516,8 @@ export class JamServer {
     }
     this.rooms.set(message.roomId, fromSnapshot(snapshot, this.now()));
     this.countRoom(message.roomId, connection.ip);
-    log("room-restored", { rooms: this.rooms.size });
+    this.tallies.set(message.roomId, newTally(this.now(), true));
+    log.info("room_restored", { rooms: this.rooms.size, app: connection.app ?? "none" });
     this.dispatch(message.roomId, { ...event, restored: true });
   }
 
@@ -489,7 +534,7 @@ export class JamServer {
       }
     }
     if (live >= IP_LIVE_ROOMS || !this.newRooms.allows(connection.ip, this.now())) {
-      log("rooms-limited", { ip: connection.ip, live });
+      log.warn("rooms_limited", { client_ip: connection.ip, live });
       this.reject(connection, id, "rate-limited");
       return false;
     }
@@ -546,6 +591,12 @@ export class JamServer {
     const outcome = reduce(room, event, this.context());
     if (outcome.room) {
       this.rooms.set(roomId, outcome.room);
+      const tally = this.tallies.get(roomId);
+      if (tally) {
+        for (const change of roomChanges(room, outcome.room, tally, this.now())) {
+          log.info(change.event, change.fields);
+        }
+      }
     }
     this.apply(roomId, outcome);
     return outcome;
@@ -560,7 +611,7 @@ export class JamServer {
       switch (effect.kind) {
         case "send":
           if (effect.message.type === "rejected") {
-            log("rejected", { connection: effect.connection, reason: effect.message.reason });
+            log.info("rejected", { connection: effect.connection, reason: effect.message.reason });
           }
           this.connections.get(effect.connection)?.send(effect.message);
           break;
@@ -689,14 +740,16 @@ export class JamServer {
     this.snapshotAt.delete(roomId);
     this.rooms.delete(roomId);
     this.roomIps.delete(roomId);
-    log("room-ended", { reason, rooms: this.rooms.size });
+    const tally = this.tallies.get(roomId) ?? newTally(this.now(), true);
+    this.tallies.delete(roomId);
+    log.info("room_ended", { ...roomSummary(tally, reason, this.now()), rooms: this.rooms.size });
   }
 
   private ping(): void {
     const now = this.now();
     for (const connection of this.connections.values()) {
       if (now - connection.lastPongAt > this.timing.deadAfterMs) {
-        log("dead", { connection: connection.id });
+        log.info("ws_dead", { connection: connection.id });
         connection.socket.terminate();
       } else {
         connection.socket.ping();
@@ -711,5 +764,47 @@ export class JamServer {
     ]) {
       limiter.forgetIdle(now);
     }
+  }
+
+  /** `jam_stats`: what is live right now, once a minute. */
+  logStats(): void {
+    let hostsOnline = 0;
+    let guestsOnline = 0;
+    let guests = 0;
+    let sharing = 0;
+    let queued = 0;
+    for (const room of this.rooms.values()) {
+      if (room.hostLeftAt === null) {
+        hostsOnline++;
+      }
+      for (const participant of room.participants) {
+        if (participant.kind !== "host") {
+          guests++;
+          guestsOnline += participant.connections > 0 ? 1 : 0;
+        }
+      }
+      sharing += room.nowPlaying.listenUrl === undefined ? 0 : 1;
+      queued += room.queue.length;
+    }
+    const apps = { web: 0, desktop: 0, android: 0, none: 0 };
+    for (const connection of this.connections.values()) {
+      apps[connection.app ?? "none"]++;
+    }
+    const memory = process.memoryUsage();
+    log.info("jam_stats", {
+      rooms: this.rooms.size,
+      hosts_online: hostsOnline,
+      guests,
+      guests_online: guestsOnline,
+      rooms_sharing: sharing,
+      queued,
+      connections: this.connections.size,
+      connections_web: apps.web,
+      connections_desktop: apps.desktop,
+      connections_android: apps.android,
+      connections_none: apps.none,
+      rss_mb: Math.round(memory.rss / 1_048_576),
+      heap_mb: Math.round(memory.heapUsed / 1_048_576),
+    });
   }
 }

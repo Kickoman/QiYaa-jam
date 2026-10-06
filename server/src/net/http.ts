@@ -1,10 +1,14 @@
 import { readFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { extname, join, normalize, sep } from "node:path";
+import { emit, type LogFields } from "../log.js";
+import { clientIp } from "./real-ip.js";
 
 export type HttpOptions = {
   readonly assetlinksJson: string | null;
   readonly webRoot: string | null;
+  /** Proxies whose X-Real-IP names the client (ROOM-60); none: the socket's address. */
+  readonly trustedProxies?: ReadonlySet<string>;
 };
 
 const CONTENT_TYPES: Readonly<Record<string, string>> = {
@@ -27,6 +31,89 @@ const SITE_PAGES: ReadonlyMap<string, string> = new Map([
   ["/ru", "site/ru.html"],
   ["/en", "site/en.html"],
 ]);
+
+const FIXED_ROUTES: ReadonlySet<string> = new Set([
+  "/healthz",
+  "/.well-known/assetlinks.json",
+  "/ws",
+]);
+
+/** Header values in a log are cut to this many characters. */
+const LOGGED_TEXT = 200;
+
+/**
+ * The route a request is counted under. The set of pages is small and closed: a room page is
+ * `/j/{roomId}` (ROOM-63: no roomId in a log), and anything unknown is `/*`, so a scanner cannot
+ * add endpoints to the log store; its path goes along as `raw_path`.
+ */
+export function routeOf(path: string): string {
+  if (SITE_PAGES.has(path) || FIXED_ROUTES.has(path)) {
+    return path;
+  }
+  if (ROOM_PAGE.test(path)) {
+    return "/j/{roomId}";
+  }
+  return path.startsWith("/assets/") ? "/assets/*" : "/*";
+}
+
+/** Requests too many and too dull to keep: logged at debug, which the default level drops. */
+const QUIET_ROUTES: ReadonlySet<string> = new Set(["/assets/*", "/healthz"]);
+
+function headerText(value: string | string[] | undefined): string {
+  const text = (Array.isArray(value) ? value[0] : value) ?? "";
+  return text.slice(0, LOGGED_TEXT);
+}
+
+/** The site a page was opened from, by host only; none for the server's own pages. */
+function referrerHost(request: IncomingMessage): string {
+  try {
+    const referrer = new URL(headerText(request.headers.referer));
+    return referrer.host === request.headers.host ? "" : referrer.host;
+  } catch {
+    return "";
+  }
+}
+
+/** The fields of an `http_request` event that describe the client. */
+export function clientFields(
+  request: IncomingMessage,
+  trustedProxies: ReadonlySet<string>,
+): LogFields {
+  const peer = (request.socket.remoteAddress ?? "").replace(/^::ffff:/, "");
+  return {
+    client_ip: clientIp(request.socket.remoteAddress, request.headers["x-real-ip"], trustedProxies),
+    peer_ip: peer,
+    user_agent: headerText(request.headers["user-agent"]),
+  };
+}
+
+/** A path that is not a route, as a scanner sent it, with any room id hidden (ROOM-63). */
+function rawPath(path: string): string {
+  return (path.startsWith("/j/") ? "/j/…" : path).slice(0, LOGGED_TEXT);
+}
+
+export function logRequest(
+  request: IncomingMessage,
+  status: number,
+  startedAt: bigint,
+  trustedProxies: ReadonlySet<string>,
+  extra: LogFields = {},
+): void {
+  const path = new URL(request.url ?? "/", "http://localhost").pathname;
+  const route = routeOf(path);
+  const level = status >= 500 ? "error" : QUIET_ROUTES.has(route) ? "debug" : "info";
+  const referrer = SITE_PAGES.has(path) || ROOM_PAGE.test(path) ? referrerHost(request) : "";
+  emit(level, "http_request", "http_request", {
+    http_method: request.method ?? "",
+    http_path: route,
+    http_status: status,
+    duration_ms: Math.round(Number(process.hrtime.bigint() - startedAt) / 10_000) / 100,
+    ...clientFields(request, trustedProxies),
+    ...(referrer ? { referrer_host: referrer } : {}),
+    ...(route === "/*" ? { raw_path: rawPath(path) } : {}),
+    ...extra,
+  });
+}
 
 function notFound(response: ServerResponse): void {
   response.writeHead(404).end();
@@ -97,8 +184,16 @@ async function route(
 }
 
 export function createHttpServer(options: HttpOptions): Server {
+  const trustedProxies = options.trustedProxies ?? new Set<string>();
   return createServer((request, response) => {
+    const startedAt = process.hrtime.bigint();
+    response.on("finish", () => {
+      logRequest(request, response.statusCode, startedAt, trustedProxies);
+    });
     route(options, request, response).catch((failed: unknown) => {
+      emit("error", "internal", "http_failed", {
+        error: failed instanceof Error ? failed.message : String(failed),
+      });
       response.destroy(failed instanceof Error ? failed : undefined);
     });
   });

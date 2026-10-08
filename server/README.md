@@ -1,7 +1,8 @@
 # `server/` — сервер джема
 
 Держит комнаты джема в памяти: участников, очередь, порядок, права и лимиты. Говорит с хозяином и
-гостями по протоколу из `spec/jam/protocol`, отдаёт лендинг, веб-гостя и `/healthz`. Звук и токен Яндекса
+гостями по протоколу из `spec/jam/protocol`, отдаёт лендинг, веб-гостя и `/healthz`, принимает
+телеметрию приложений (`POST /api/telemetry`, `spec/telemetry`). Звук и токен Яндекса
 сюда не приходят: поиск и проверку треков сервер только пересылает хозяину. Готовы протокол,
 комната, сеть с WebSocket, лимиты на комнаты, снимки и восстановление после перезапуска.
 
@@ -70,6 +71,7 @@ function configureLog(options: { write?; level? }): void;   // тесты: ку�
 | `guest_joined`, `guest_kicked`, `guest_search`, `track_added`, `track_started`, `listen_shared`, `host_left`, `host_back`, `settings_changed` | события в комнате, из разницы состояний (`net/room-log.ts`) | вид гостя, кто добавил, источник трека (`item`/`vibe`), есть ли ссылка для прослушивания |
 | `jam_stats` | раз в минуту | `rooms`, `hosts_online`, `guests`, `guests_online`, `rooms_sharing`, `queued`, `connections` и по приложениям, `rss_mb`, `heap_mb` |
 | `rejected`, `violation`, `ban`, `rooms_limited` | отказы и нарушения | `reason`, `code`, `client_ip` |
+| `app_start`, `app_exit`, `app_crash`, `app_unclean_exit`, `app_error`, `app_feature` (поток `telemetry`, `service: qiyaa-desktop`) | телеметрия приложения ПК, принятая на `POST /api/telemetry` | поля события из `spec/telemetry` в snake_case, `machine`, `client_ip`, `client_at`; у крэша — `frames` строкой и `signature` (сигнал и первые четыре кадра) |
 
 `/assets/*` и `/healthz` пишутся на уровне `debug`, то есть при `LOG_LEVEL=info` не пишутся.
 

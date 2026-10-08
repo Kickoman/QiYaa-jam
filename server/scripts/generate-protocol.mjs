@@ -1,5 +1,6 @@
 // Generates src/protocol/generated/ from spec/jam/protocol/schemas: TypeScript types for every
-// message, the schemas themselves for Ajv, and the lists of client and server message types.
+// message, the schemas themselves for Ajv, and the lists of client and server message types; and
+// telemetry.ts from spec/telemetry/schemas, the batch the apps post to /api/telemetry.
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -55,3 +56,20 @@ writeFileSync(
     `export const schemas: readonly Record<string, unknown>[] = ${JSON.stringify(schemas.map((entry) => entry.schema))};\n`,
 );
 console.log(`protocol: ${schemas.length} schemas → ${relative(process.cwd(), outDir)}`);
+
+// Telemetry (spec/telemetry): one schema, the batch the apps post to /api/telemetry.
+const telemetryPath = join(here, "../../spec/telemetry/schemas/batch.schema.json");
+const telemetrySchema = JSON.parse(readFileSync(telemetryPath, "utf8"));
+const telemetryTypes = await compile(telemetrySchema, "TelemetryBatch", {
+  bannerComment: "",
+  additionalProperties: false,
+  maxItems: -1,
+  format: false,
+});
+writeFileSync(
+  join(outDir, "telemetry.ts"),
+  banner +
+    telemetryTypes +
+    `\nexport const telemetrySchema: Record<string, unknown> = ${JSON.stringify(telemetrySchema)};\n`,
+);
+console.log(`telemetry: batch schema → ${relative(process.cwd(), outDir)}`);

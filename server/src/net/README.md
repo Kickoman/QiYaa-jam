@@ -12,6 +12,7 @@
 | `real-ip.ts` | `clientIp`, `parseTrustedProxies` — IP клиента с учётом `X-Real-IP` |
 | `rate-limit.ts` | `RateLimiter` (token bucket), `Violations` (нарушения и бан) |
 | `persistence.ts` | `saveRooms`, `takeRooms` — файл комнат на время планового перезапуска |
+| `telemetry.ts` | `TelemetryReceiver` — `POST /api/telemetry` (spec/telemetry): проверка пакета, лимиты, по строке лога на событие |
 | `room-log.ts` | `roomChanges`, `roomSummary`, `Tally` — события комнаты для логов из разницы двух состояний и итог комнаты |
 
 Зависимости: `net → room → protocol`. `ws` импортирует только `server.ts`.
@@ -97,12 +98,17 @@ Ping — каждые `PING_INTERVAL_MS`; соединение без pong до�
 ## `http.ts`
 
 ```ts
-function createHttpServer(options: { assetlinksJson: string | null; webRoot: string | null }): Server;
+function createHttpServer(options: {
+  assetlinksJson: string | null;
+  webRoot: string | null;
+  trustedProxies?: ReadonlySet<string>;   // для client_ip в логах и лимитов телеметрии
+}): Server;
 ```
 
-| Путь (`GET` или `HEAD`) | Ответ |
+| Путь (`GET` или `HEAD`, у телеметрии — `POST`) | Ответ |
 |---|---|
 | `/healthz` | 200 `ok` |
+| `POST /api/telemetry` | пакет телеметрии (`spec/telemetry`): 204, или 400 / 413 / 429; события — строками лога в потоке `telemetry` (TEL-11, TEL-12) |
 | `/.well-known/assetlinks.json` | тело из `ASSETLINKS_JSON`, если задано |
 | `/`, `/ru`, `/en` | лендинг: `webRoot/site/be.html`, `ru.html`, `en.html`, `no-cache` |
 | `/j/<roomId>` | веб-гость: `webRoot/index.html`, `no-cache` |

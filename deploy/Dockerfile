@@ -5,6 +5,7 @@ COPY server/package.json server/
 COPY web/package.json web/
 RUN npm ci --workspace server --workspace web --include-workspace-root
 COPY spec/jam/protocol spec/jam/protocol
+COPY spec/telemetry/schemas spec/telemetry/schemas
 COPY server server
 COPY web web
 RUN npm run generate --workspace server \

@@ -7,8 +7,11 @@ export type LogFields = Readonly<Record<string, string | number | boolean | null
 
 export type Level = "debug" | "info" | "warn" | "error";
 
-/** `http_request`: one event per HTTP request; `internal`: everything else. */
-export type Stream = "http_request" | "internal";
+/**
+ * `http_request`: one event per HTTP request; `telemetry`: an app's event, received at
+ * /api/telemetry and written under the app's own service; `internal`: everything else.
+ */
+export type Stream = "http_request" | "internal" | "telemetry";
 
 const RANK: Readonly<Record<Level, number>> = { debug: 10, info: 20, warn: 30, error: 40 };
 
@@ -38,13 +41,19 @@ export function configureLog(options: {
   }
 }
 
-export function emit(level: Level, stream: Stream, event: string, fields: LogFields = {}): void {
+export function emit(
+  level: Level,
+  stream: Stream,
+  event: string,
+  fields: LogFields = {},
+  service: string = settings.service,
+): void {
   if (RANK[level] < RANK[settings.minimum]) {
     return;
   }
   const line = {
     ts: new Date().toISOString(),
-    service: settings.service,
+    service,
     stream,
     level,
     event,

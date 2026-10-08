@@ -3,6 +3,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { extname, join, normalize, sep } from "node:path";
 import { emit, type LogFields } from "../log.js";
 import { clientIp } from "./real-ip.js";
+import { TELEMETRY_PATH, TelemetryReceiver } from "./telemetry.js";
 
 export type HttpOptions = {
   readonly assetlinksJson: string | null;
@@ -36,6 +37,7 @@ const FIXED_ROUTES: ReadonlySet<string> = new Set([
   "/healthz",
   "/.well-known/assetlinks.json",
   "/ws",
+  TELEMETRY_PATH,
 ]);
 
 /** Header values in a log are cut to this many characters. */
@@ -58,6 +60,8 @@ export function routeOf(path: string): string {
 
 /** Requests too many and too dull to keep: logged at debug, which the default level drops. */
 const QUIET_ROUTES: ReadonlySet<string> = new Set(["/assets/*", "/healthz"]);
+/** Quiet unless refused: a telemetry post's events are logged on their own (TEL-11). */
+const QUIET_WHEN_ANSWERED: ReadonlySet<string> = new Set([TELEMETRY_PATH]);
 
 function headerText(value: string | string[] | undefined): string {
   const text = (Array.isArray(value) ? value[0] : value) ?? "";
@@ -101,7 +105,8 @@ export function logRequest(
 ): void {
   const path = new URL(request.url ?? "/", "http://localhost").pathname;
   const route = routeOf(path);
-  const level = status >= 500 ? "error" : QUIET_ROUTES.has(route) ? "debug" : "info";
+  const quiet = QUIET_ROUTES.has(route) || (QUIET_WHEN_ANSWERED.has(route) && status < 400);
+  const level = status >= 500 ? "error" : quiet ? "debug" : "info";
   const referrer = SITE_PAGES.has(path) || ROOM_PAGE.test(path) ? referrerHost(request) : "";
   emit(level, "http_request", "http_request", {
     http_method: request.method ?? "",
@@ -146,10 +151,20 @@ async function sendFile(
 
 async function route(
   options: HttpOptions,
+  telemetry: TelemetryReceiver,
   request: IncomingMessage,
   response: ServerResponse,
 ): Promise<void> {
   const path = new URL(request.url ?? "/", "http://localhost").pathname;
+  if (path === TELEMETRY_PATH && request.method === "POST") {
+    const ip = clientIp(
+      request.socket.remoteAddress,
+      request.headers["x-real-ip"],
+      options.trustedProxies ?? new Set<string>(),
+    );
+    await telemetry.receive(request, response, ip);
+    return;
+  }
   // Node sends no body in answer to HEAD.
   if (request.method !== "GET" && request.method !== "HEAD") {
     notFound(response);
@@ -185,12 +200,13 @@ async function route(
 
 export function createHttpServer(options: HttpOptions): Server {
   const trustedProxies = options.trustedProxies ?? new Set<string>();
+  const telemetry = new TelemetryReceiver();
   return createServer((request, response) => {
     const startedAt = process.hrtime.bigint();
     response.on("finish", () => {
       logRequest(request, response.statusCode, startedAt, trustedProxies);
     });
-    route(options, request, response).catch((failed: unknown) => {
+    route(options, telemetry, request, response).catch((failed: unknown) => {
       emit("error", "internal", "http_failed", {
         error: failed instanceof Error ? failed.message : String(failed),
       });

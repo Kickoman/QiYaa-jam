@@ -26,13 +26,13 @@
 | `scripts/budget.mjs` | Проверка бюджета: гость и лендинг вместе до 100 КиБ gzip без шрифтов и картинок |
 | `e2e/jam.spec.ts` | Playwright: сервер, имитатор хозяина и браузерные гости |
 | `site/` | Лендинг, см. [ниже](#лендинг-site) |
-| `test/site.test.ts`, `e2e/site.spec.ts` | Лендинг: тексты всех языков, ссылки на релизы; в браузере — языки, ширины 1440/1024/390, GitHub API |
+| `test/site.test.ts`, `test/clicks.test.ts`, `e2e/site.spec.ts` | Лендинг: тексты всех языков, ссылки на релизы, клики по скачиванию; в браузере — языки, ширины 1440/1024/390, GitHub API, клик до строки лога сервера |
 
 ## Команды
 
 | Команда | Что делает |
 |---|---|
-| `npm run dev -w web` | Vite на :5173 с прокси `/ws` на :8090 |
+| `npm run dev -w web` | Vite на :5173 с прокси `/ws` и `/api` на :8090 |
 | `npm run build -w web` | Сборка в `web/dist` |
 | `npm run check -w web` | Типы, тесты, сборка, бюджет |
 | `npm run e2e -w web` | Сборка и тесты в Chromium (один раз: `npx playwright install chromium`) |
@@ -86,6 +86,7 @@ Press Start 2P покрывает кириллицу (`U+0400–045F`, с `і` �
 | `site/be.html`, `ru.html`, `en.html` | Входы сборки — заглушки: плагин `qiyaa-landing` в `vite.config.ts` (`transformIndexHtml`, `order: "pre"`) заменяет их шаблоном на своём языке, потом Vite хэширует CSS, JS, шрифты и картинку в `/assets/` |
 | `site/site.css` | Стили; токены и шрифты — из `src/theme.css` |
 | `site/releases.ts` | Кнопки скачивания и номер версии: спрашивает `api.github.com` о последних релизах QiYaa и QiYaa-android и ставит прямые ссылки на файлы (`pickDownloads`). Без ответа за 5 с остаются ссылки на `releases/latest` |
+| `site/clicks.ts` | Клик по кнопке скачивания (TEL-13): `downloadClick` собирает файл, секцию, язык страницы, версию из ссылки, язык браузера и хост сайта, откуда пришли; слушатель `click` и `auxclick` на `document` шлёт его `fetch` с `keepalive` на `POST /api/download`. Ссылку не трогает и ответа не ждёт |
 | `site/player.png` | Скриншот главного окна (413×174) из макета, на странице 550×232, `pixelated` |
 
 Сервер отдаёт `dist/site/be.html` на `/`, `ru.html` на `/ru`, `en.html` на `/en`. По языку браузера
@@ -102,7 +103,8 @@ Press Start 2P покрывает кириллицу (`U+0400–045F`, с `і` �
 Файлы woff2 разбиты по `unicode-range`: браузер скачивает только те, что нужны для текста на
 странице. 12 файлов по 7–22 КБ. В бюджет не входят. Внешних запросов у гостя нет, кроме
 обложек с `avatars.yandex.net`; `<meta name="referrer" content="no-referrer">` не даёт им узнать
-адрес комнаты. У лендинга внешний запрос один — `api.github.com` за последними релизами.
+адрес комнаты. У лендинга внешний запрос один — `api.github.com` за последними релизами; к своему
+серверу — только `POST /api/download` при клике по кнопке скачивания (`site/clicks.ts`).
 
 ## `src/protocol/client.ts`
 

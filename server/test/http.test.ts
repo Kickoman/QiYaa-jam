@@ -105,6 +105,8 @@ describe("http", () => {
       "/assets/missing.js",
       "/assets/../../outside-web-root.txt",
       "/assets/%2e%2e/%2e%2e/outside-web-root.txt",
+      "/api/download",
+      "/api/telemetry",
     ];
     for (const path of paths) {
       const response = await fetch(base + path);

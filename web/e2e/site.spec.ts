@@ -1,10 +1,12 @@
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
+import { configureLog } from "../../server/src/log.js";
 import { parseTrustedProxies } from "../../server/src/net/real-ip.js";
 import { JamServer } from "../../server/src/net/server.js";
 
 // The landing as the server serves it: three languages, a layout without sideways scrolling,
-// and download buttons that follow GitHub's newest release, or stay on releases/latest.
+// download buttons that follow GitHub's newest release, or stay on releases/latest, and the
+// clicks on them that reach the server's log.
 
 const WEB_ROOT = fileURLToPath(new URL("../dist", import.meta.url));
 const PORT = 18_190;
@@ -12,8 +14,10 @@ const BASE = `http://127.0.0.1:${PORT}`;
 const LATEST = "https://github.com/Kickoman/QiYaa/releases/latest";
 
 let server: JamServer;
+const logged: Record<string, unknown>[] = [];
 
 test.beforeAll(async () => {
+  configureLog({ write: (line) => logged.push(JSON.parse(line) as Record<string, unknown>) });
   server = new JamServer({
     publicUrl: BASE,
     trustedProxies: parseTrustedProxies(undefined),
@@ -26,6 +30,11 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => {
   await server.close();
+  configureLog({
+    write: (line) => {
+      process.stdout.write(line);
+    },
+  });
 });
 
 function release(repository: string, tag: string, names: readonly string[]) {
@@ -121,3 +130,59 @@ test("without GitHub the buttons stay on releases/latest and no version shows", 
   await expect(page.locator('[data-version="desktop"]')).toBeHidden();
   await expect(page.locator('[data-version="android"]')).toBeHidden();
 });
+
+test("TEL-13 a click on a download button reaches the server's log, and the file still opens", async ({
+  page,
+}) => {
+  await answerGitHub(page);
+  await page
+    .context()
+    .route("https://github.com/Kickoman/**", (route) => route.fulfill({ body: "the file" }));
+  await page.goto(`${BASE}/en`, { referer: "https://t.me/qiyaa" });
+  const deb = page.getByRole("link", { name: "Download: Linux, .deb" });
+  await expect(deb).toHaveAttribute("href", /v9\.8\.7/);
+  const before = logged.length;
+  await deb.click();
+  await expect(page).toHaveURL(/qiyaa_9\.8\.7_amd64\.deb$/);
+  await expect.poll(() => clicks(before)).toHaveLength(1);
+  expect(clicks(before)[0]).toMatchObject({
+    level: "info",
+    http_status: 204,
+    file: "deb",
+    place: "download",
+    page_language: "en",
+    app_version: "9.8.7",
+    browser_language: "ru-RU",
+    referrer_host: "t.me",
+  });
+});
+
+test("TEL-13 a middle click counts too; without GitHub's answer there is no version", async ({
+  page,
+}) => {
+  await page.route("https://api.github.com/**", (route) => route.abort());
+  await page.context().route("https://github.com/**", (route) => route.fulfill({ body: "page" }));
+  await page.goto(BASE);
+  await page.waitForLoadState("networkidle");
+  const before = logged.length;
+  await page.locator('#android a[data-download="apk"]').click({ button: "middle" });
+  await expect.poll(() => clicks(before)).toHaveLength(1);
+  const click = clicks(before)[0];
+  expect(click).toMatchObject({ file: "apk", place: "android", page_language: "be" });
+  expect(click).not.toHaveProperty("app_version");
+  expect(click).not.toHaveProperty("referrer_host");
+});
+
+test("TEL-13 when the click cannot be sent, the button still opens its link", async ({ page }) => {
+  await page.route("https://api.github.com/**", (route) => route.abort());
+  await page.route("**/api/download", (route) => route.abort());
+  await page.context().route("https://github.com/**", (route) => route.fulfill({ body: "page" }));
+  await page.goto(`${BASE}/ru`);
+  await page.waitForLoadState("networkidle");
+  await page.locator('#download a[data-download="dmg"]').click();
+  await expect(page).toHaveURL(LATEST);
+});
+
+function clicks(before: number): Record<string, unknown>[] {
+  return logged.slice(before).filter((line) => line.http_path === "/api/download");
+}

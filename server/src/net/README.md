@@ -7,12 +7,14 @@
 | Файл | Что там |
 |---|---|
 | `server.ts` | `JamServer` — HTTP + WebSocket, реестр комнат, соединения, лимиты, таймеры |
-| `http.ts` | `createHttpServer` — `/healthz`, `assetlinks.json`, лендинг и веб-гость, остальное 404 |
+| `http.ts` | `createHttpServer` — `/healthz`, `assetlinks.json`, лендинг и веб-гость, два `POST`, остальное 404 |
 | `ids.ts` | `ids` — случайные `roomId`, `publicId`, секреты, id запросов и соединений |
 | `real-ip.ts` | `clientIp`, `parseTrustedProxies` — IP клиента с учётом `X-Real-IP` |
 | `rate-limit.ts` | `RateLimiter` (token bucket), `Violations` (нарушения и бан) |
 | `persistence.ts` | `saveRooms`, `takeRooms` — файл комнат на время планового перезапуска |
 | `telemetry.ts` | `TelemetryReceiver` — `POST /api/telemetry` (spec/telemetry): проверка пакета, лимиты, по строке лога на событие |
+| `downloads.ts` | `DownloadReceiver` — `POST /api/download`: клик по кнопке скачивания на лендинге, поля — в строку самого запроса |
+| `post-body.ts` | `readJsonBody`, `refuse` — тело POST с лимитом размера и пустой отказ 400 / 413 / 429; общее для двух приёмников |
 | `room-log.ts` | `roomChanges`, `roomSummary`, `Tally` — события комнаты для логов из разницы двух состояний и итог комнаты |
 
 Зависимости: `net → room → protocol`. `ws` импортирует только `server.ts`.
@@ -105,10 +107,11 @@ function createHttpServer(options: {
 }): Server;
 ```
 
-| Путь (`GET` или `HEAD`, у телеметрии — `POST`) | Ответ |
+| Путь (`GET` или `HEAD`, у телеметрии и кликов — `POST`) | Ответ |
 |---|---|
 | `/healthz` | 200 `ok` |
 | `POST /api/telemetry` | пакет телеметрии (`spec/telemetry`): 204, или 400 / 413 / 429; события — строками лога в потоке `telemetry` (TEL-11, TEL-12) |
+| `POST /api/download` | клик по кнопке скачивания лендинга (`spec/telemetry`, раздел The landing): 204, или 400 / 413 / 429; клик — полями строки этого запроса (TEL-14, TEL-15) |
 | `/.well-known/assetlinks.json` | тело из `ASSETLINKS_JSON`, если задано |
 | `/`, `/ru`, `/en` | лендинг: `webRoot/site/be.html`, `ru.html`, `en.html`, `no-cache` |
 | `/j/<roomId>` | веб-гость: `webRoot/index.html`, `no-cache` |
@@ -120,6 +123,37 @@ function createHttpServer(options: {
 **Ловушки:**
 - Путь нормализуется и сверяется с `webRoot`: `..` наружу не выпускает, это проверяет тест с сырым
   запросом. `fetch` сам схлопывает `..`, поэтому им такое не проверить.
+- Строка `http_request` пишется, когда случились оба события: ответ ушёл (`finish`) и обработчик
+  вернул поля для строки. Приёмник клика отдаёт их уже после `end()`, и порядок `finish`
+  относительно продолжения промиса Node не обещает.
+- Новый путь должен попасть в `FIXED_ROUTES`, иначе его запросы лягут в лог как `/*` с `raw_path`.
+
+## `downloads.ts`
+
+```ts
+const DOWNLOAD_PATH = "/api/download";
+type DownloadClick = { file; place; language; version?; browserLanguage?; referrer? };
+function parseDownloadClick(value: unknown): DownloadClick | null;   // Ajv, лишние поля — null
+function clickFields(click: DownloadClick): LogFields;   // file, place, page_language, app_version, browser_language, referrer_host
+class DownloadReceiver {
+  receive(request, response, clientIp: string): Promise<LogFields>;   // поля клика или {} при отказе
+}
+```
+
+Клик шлёт `web/site/clicks.ts`. Поля, значения и лимиты (1 KiB, 10 кликов в минуту с IP) — в
+`spec/telemetry/README.md`, раздел The landing. Отдельной строки у клика нет: его поля едут в
+строке `http_request` этого запроса на уровне `info` и живут в хранилище логов столько же, сколько
+просмотры лендинга.
+
+**Ловушки:**
+- `Origin` не проверяется: у лендинга `<meta name="referrer" content="no-referrer">`, и браузер
+  шлёт `Origin: null` даже со своего же сайта. Поэтому же сайт, откуда пришли, страница кладёт в
+  тело (`referrer`), а не берётся из заголовка `Referer`.
+- Список файлов повторяет `data-download` из `web/site/releases.ts`. Совпадение держит тест
+  `web/test/site.test.ts`: каждая кнопка `page.html` даёт клик, который принимает
+  `parseDownloadClick`.
+- `version` в логе — `app_version`: так в этом сервисе называется версия приложения, а `version`
+  в строке `startup` — версия самого сервера.
 
 ## `real-ip.ts`
 

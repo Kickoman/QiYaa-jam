@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { parseDownloadClick } from "../../server/src/net/downloads.js";
+import { downloadClick } from "../site/clicks.js";
 import { pickDownloads } from "../site/releases.js";
 import { renderPage, templateKeys } from "../site/render.js";
 import { SITE_LANGUAGES, SITE_TEXTS } from "../site/texts.js";
@@ -113,5 +115,36 @@ describe("download links", () => {
     expect(foreign).toEqual({ version: null, files: {} });
     expect(pickDownloads({})).toEqual({ version: null, files: {} });
     expect(pickDownloads({ tag_name: 4, assets: {} })).toEqual({ version: null, files: {} });
+  });
+});
+
+describe("download buttons", () => {
+  it("TEL-13 every download button of the page makes a click the server takes", () => {
+    const buttons = Array.from(template.matchAll(/data-download="([^"]*)"/g), (match) => {
+      const sections = template.slice(0, match.index).matchAll(/<section id="([^"]+)"/g);
+      return { file: match[1], place: Array.from(sections).at(-1)?.[1] };
+    });
+    expect(buttons.map(({ file, place }) => `${file ?? ""} ${place ?? ""}`)).toEqual([
+      "windows-setup download",
+      "windows-zip download",
+      "appimage download",
+      "deb download",
+      "dmg download",
+      "apk download",
+      "apk android",
+    ]);
+    for (const { file, place } of buttons) {
+      const click = downloadClick({
+        file,
+        place,
+        href: "https://github.com/Kickoman/QiYaa/releases/latest",
+        language: "en",
+        browserLanguage: "en-GB",
+        referrer: "",
+        host: "jam.example.org",
+      });
+      expect(click, file).not.toBeNull();
+      expect(parseDownloadClick(click), file).toEqual(click);
+    }
   });
 });

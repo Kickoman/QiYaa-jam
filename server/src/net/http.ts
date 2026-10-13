@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { extname, join, normalize, sep } from "node:path";
 import { emit, type LogFields } from "../log.js";
+import { DOWNLOAD_PATH, DownloadReceiver } from "./downloads.js";
 import { clientIp } from "./real-ip.js";
 import { TELEMETRY_PATH, TelemetryReceiver } from "./telemetry.js";
 
@@ -38,6 +39,7 @@ const FIXED_ROUTES: ReadonlySet<string> = new Set([
   "/.well-known/assetlinks.json",
   "/ws",
   TELEMETRY_PATH,
+  DOWNLOAD_PATH,
 ]);
 
 /** Header values in a log are cut to this many characters. */
@@ -149,22 +151,43 @@ async function sendFile(
   }
 }
 
+type Receivers = {
+  readonly telemetry: TelemetryReceiver;
+  readonly downloads: DownloadReceiver;
+};
+
+const NO_FIELDS: LogFields = {};
+
+/** Answers the request; resolves to what its log line adds (a download click's fields). */
 async function route(
+  receivers: Receivers,
   options: HttpOptions,
-  telemetry: TelemetryReceiver,
   request: IncomingMessage,
   response: ServerResponse,
-): Promise<void> {
+): Promise<LogFields> {
   const path = new URL(request.url ?? "/", "http://localhost").pathname;
-  if (path === TELEMETRY_PATH && request.method === "POST") {
+  if (request.method === "POST" && (path === TELEMETRY_PATH || path === DOWNLOAD_PATH)) {
     const ip = clientIp(
       request.socket.remoteAddress,
       request.headers["x-real-ip"],
       options.trustedProxies ?? new Set<string>(),
     );
-    await telemetry.receive(request, response, ip);
-    return;
+    if (path === DOWNLOAD_PATH) {
+      return receivers.downloads.receive(request, response, ip);
+    }
+    await receivers.telemetry.receive(request, response, ip);
+    return NO_FIELDS;
   }
+  await serve(options, request, response, path);
+  return NO_FIELDS;
+}
+
+async function serve(
+  options: HttpOptions,
+  request: IncomingMessage,
+  response: ServerResponse,
+  path: string,
+): Promise<void> {
   // Node sends no body in answer to HEAD.
   if (request.method !== "GET" && request.method !== "HEAD") {
     notFound(response);
@@ -200,17 +223,27 @@ async function route(
 
 export function createHttpServer(options: HttpOptions): Server {
   const trustedProxies = options.trustedProxies ?? new Set<string>();
-  const telemetry = new TelemetryReceiver();
+  const receivers: Receivers = {
+    telemetry: new TelemetryReceiver(),
+    downloads: new DownloadReceiver(),
+  };
   return createServer((request, response) => {
     const startedAt = process.hrtime.bigint();
-    response.on("finish", () => {
-      logRequest(request, response.statusCode, startedAt, trustedProxies);
+    const finished = new Promise<void>((resolve) => {
+      response.once("finish", resolve);
     });
-    route(options, telemetry, request, response).catch((failed: unknown) => {
-      emit("error", "internal", "http_failed", {
-        error: failed instanceof Error ? failed.message : String(failed),
-      });
-      response.destroy(failed instanceof Error ? failed : undefined);
-    });
+    // The line waits for both: a receiver hands over its fields only after the answer is sent.
+    void route(receivers, options, request, response).then(
+      async (fields) => {
+        await finished;
+        logRequest(request, response.statusCode, startedAt, trustedProxies, fields);
+      },
+      (failed: unknown) => {
+        emit("error", "internal", "http_failed", {
+          error: failed instanceof Error ? failed.message : String(failed),
+        });
+        response.destroy(failed instanceof Error ? failed : undefined);
+      },
+    );
   });
 }

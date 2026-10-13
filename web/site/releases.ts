@@ -28,6 +28,10 @@ const REPOSITORIES = ["Kickoman/QiYaa", "Kickoman/QiYaa-android"] as const;
 const DOWNLOAD_PREFIX = "https://github.com/Kickoman/";
 const TIMEOUT_MS = 5_000;
 
+export function isDownload(value: string): value is Download {
+  return FILES.some(([download]) => download === value);
+}
+
 function text(value: unknown): string | null {
   return typeof value === "string" ? value : null;
 }

@@ -6,6 +6,7 @@ import {
   type CrashEvent,
   type TelemetryBatch,
 } from "../protocol/generated/telemetry.js";
+import { readJsonBody, refuse } from "./post-body.js";
 import { RateLimiter } from "./rate-limit.js";
 
 // POST /api/telemetry (spec/telemetry): the apps' usage statistics and crash reports. Every event
@@ -74,22 +75,6 @@ export function crashSignature(event: CrashEvent): string {
   return [event.signal, ...event.frames.slice(0, 4)].join(" ");
 }
 
-async function readBody(request: IncomingMessage): Promise<Buffer | null> {
-  if (Number(request.headers["content-length"] ?? "0") > TELEMETRY_BODY_BYTES) {
-    return null;
-  }
-  const chunks: Buffer[] = [];
-  let size = 0;
-  for await (const chunk of request as AsyncIterable<Buffer>) {
-    size += chunk.length;
-    if (size > TELEMETRY_BODY_BYTES) {
-      return null;
-    }
-    chunks.push(chunk);
-  }
-  return Buffer.concat(chunks);
-}
-
 export class TelemetryReceiver {
   private readonly perIp = new RateLimiter(BATCHES_PER_IP_PER_MINUTE, MINUTE_MS);
   private readonly perMachine = new RateLimiter(BATCHES_PER_MACHINE_PER_MINUTE, MINUTE_MS);
@@ -110,27 +95,21 @@ export class TelemetryReceiver {
       this.perMachine.forgetIdle(now);
     }
     if (!this.perIp.take(clientIp, now)) {
-      this.refuse(response, 429);
+      refuse(response, 429);
       return;
     }
-    const body = await readBody(request);
-    if (body === null) {
-      this.refuse(response, 413);
+    const body = await readJsonBody(request, TELEMETRY_BODY_BYTES);
+    if (body.kind === "too-large") {
+      refuse(response, 413);
       return;
     }
-    let batch: unknown;
-    try {
-      batch = JSON.parse(body.toString("utf8"));
-    } catch {
-      this.refuse(response, 400);
+    if (body.kind === "not-json" || !validate(body.value)) {
+      refuse(response, 400);
       return;
     }
-    if (!validate(batch)) {
-      this.refuse(response, 400);
-      return;
-    }
+    const batch = body.value;
     if (!this.perMachine.take(batch.machine, now)) {
-      this.refuse(response, 429);
+      refuse(response, 429);
       return;
     }
     const service = SERVICES[batch.app];
@@ -144,13 +123,5 @@ export class TelemetryReceiver {
       );
     }
     response.writeHead(204).end();
-  }
-
-  private refuse(response: ServerResponse, status: 400 | 413 | 429): void {
-    const headers: Record<string, string> = { connection: "close" };
-    if (status === 429) {
-      headers["retry-after"] = "60";
-    }
-    response.writeHead(status, headers).end();
   }
 }

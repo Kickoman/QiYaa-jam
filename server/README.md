@@ -2,7 +2,8 @@
 
 Держит комнаты джема в памяти: участников, очередь, порядок, права и лимиты. Говорит с хозяином и
 гостями по протоколу из `spec/jam/protocol`, отдаёт лендинг, веб-гостя и `/healthz`, принимает
-телеметрию приложений (`POST /api/telemetry`, `spec/telemetry`). Звук и токен Яндекса
+телеметрию приложений (`POST /api/telemetry`) и клики по кнопкам скачивания лендинга
+(`POST /api/download`), оба — по `spec/telemetry`. Звук и токен Яндекса
 сюда не приходят: поиск и проверку треков сервер только пересылает хозяину. Готовы протокол,
 комната, сеть с WebSocket, лимиты на комнаты, снимки и восстановление после перезапуска.
 
@@ -53,7 +54,7 @@ grep -rlnE 'from "(ws|node:net|node:http)"' server/src/room/   # должно н
 ```ts
 type LogFields = Readonly<Record<string, string | number | boolean | null>>;
 const log: { debug, info, warn, error: (event: string, fields?: LogFields) => void };  // поток internal
-function emit(level, stream: "http_request" | "internal", event: string, fields?: LogFields): void;
+function emit(level, stream: "http_request" | "internal" | "telemetry", event: string, fields?: LogFields, service?: string): void;
 function configureLog(options: { write?; level? }): void;   // тесты: куда писать и какой уровень
 ```
 
@@ -65,7 +66,7 @@ function configureLog(options: { write?; level? }): void;   // тесты: ку�
 | Событие | Когда | Поля |
 |---|---|---|
 | `startup`, `shutdown` | запуск (по нему считаются падения в цикле), SIGTERM | `version`, `rooms` |
-| `http_request` (поток `http_request`) | каждый HTTP-запрос и апгрейд `/ws` | маршрут (`/j/{roomId}`, неизвестное — `/*` и `raw_path`), статус, длительность, `client_ip`, `peer_ip`, `user_agent`, `referrer_host` у страниц, `reason` у отказа в апгрейде |
+| `http_request` (поток `http_request`) | каждый HTTP-запрос и апгрейд `/ws` | маршрут (`/j/{roomId}`, неизвестное — `/*` и `raw_path`), статус, длительность, `client_ip`, `peer_ip`, `user_agent`, `referrer_host` у страниц, `reason` у отказа в апгрейде; у принятого клика по скачиванию (`POST /api/download`) — `file`, `place`, `page_language` и, если были, `app_version`, `browser_language`, `referrer_host` |
 | `ws_hello`, `ws_close`, `ws_dead` | приложение поздоровалось; соединение закрылось | `app`, `app_version`; `role`, `code`, `seconds` |
 | `room_created`, `room_restored`, `room_ended` | комната появилась, поднята из снимка, закончилась | настройки и `app` хозяина; итог комнаты: `minutes`, `guests`, `guest_tracks`, `host_tracks`, `played_items`, `played_vibe`, `searches`, `kicked`, `listen_shared` |
 | `guest_joined`, `guest_kicked`, `guest_search`, `track_added`, `track_started`, `listen_shared`, `host_left`, `host_back`, `settings_changed` | события в комнате, из разницы состояний (`net/room-log.ts`) | вид гостя, кто добавил, источник трека (`item`/`vibe`), есть ли ссылка для прослушивания |

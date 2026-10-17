@@ -98,6 +98,54 @@ describe("telemetry", () => {
     expect(start).not.toHaveProperty("type");
   });
 
+  it("TEL-11 an android batch is logged under qiyaa-android", async () => {
+    const before = logged.length;
+    await post(example("android-crash-then-start.json"), "198.51.100.78");
+    await expect
+      .poll(() => since(before).filter((line) => line.stream === "telemetry"))
+      .toHaveLength(2);
+    const [crash, start] = since(before).filter((line) => line.stream === "telemetry");
+    const frames = [
+      "io.github.kickoman.qiyaa.queue.QueueController.onFailure:291",
+      "io.github.kickoman.qiyaa.playback.Media3Engine$listener$1.onPlayerError:41",
+      "androidx.media3.common.util.ListenerSet$ListenerHolder.invoke:351",
+      "androidx.media3.common.util.ListenerSet.flushEvents:183",
+      "android.os.Handler.dispatchMessage:99",
+      "android.os.Looper.loopOnce:205",
+      "android.os.Looper.loop:294",
+      "android.app.ActivityThread.main:8177",
+      "java.lang.reflect.Method.invoke:0",
+    ];
+    expect(crash).toMatchObject({
+      service: "qiyaa-android",
+      level: "error",
+      event: "app_crash",
+      machine: "97eaa8cc2fbe9a456389e6bd9d44a3fb",
+      client_ip: "198.51.100.78",
+      session: "5b0f2e7c-91d4-4c3a-b8e6-2a7d9f1c0e53",
+      app_version: "0.6.0",
+      signal: "TERMINATE",
+      frames: frames.join(" "),
+      signature:
+        "TERMINATE io.github.kickoman.qiyaa.queue.QueueController.onFailure:291 " +
+        "io.github.kickoman.qiyaa.playback.Media3Engine$listener$1.onPlayerError:41 " +
+        "androidx.media3.common.util.ListenerSet$ListenerHolder.invoke:351 " +
+        "androidx.media3.common.util.ListenerSet.flushEvents:183",
+      seconds: 5423,
+      exception_type: "java.lang.IllegalStateException",
+    });
+    expect(start).toMatchObject({
+      service: "qiyaa-android",
+      level: "info",
+      event: "app_start",
+      os: "android",
+      sdk: 34,
+      device: "Google Pixel 7",
+      quality_metered: "economy",
+      first_run: false,
+    });
+  });
+
   it("TEL-11 an api error's status is api_status, not the store's http_status", async () => {
     const before = logged.length;
     await post(example("session.json"));

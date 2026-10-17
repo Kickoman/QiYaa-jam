@@ -18,7 +18,10 @@ export const TELEMETRY_BODY_BYTES = 64 * 1024;
 const BATCHES_PER_IP_PER_MINUTE = 30;
 const BATCHES_PER_MACHINE_PER_MINUTE = 10;
 const MINUTE_MS = 60_000;
-const SERVICES: Readonly<Record<TelemetryBatch["app"], string>> = { desktop: "qiyaa-desktop" };
+const SERVICES: Readonly<Record<TelemetryBatch["app"], string>> = {
+  desktop: "qiyaa-desktop",
+  android: "qiyaa-android",
+};
 
 type Event = TelemetryBatch["events"][number];
 

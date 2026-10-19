@@ -6,7 +6,7 @@
 
 | Файл | Что там |
 |---|---|
-| `generated/types.ts` | Типы всех сообщений и объектов: `ClientMessage`, `ServerMessage`, `StateMessage`, `Room`, `Track`, `SnapshotData`… Генерируется, в git не попадает |
+| `generated/types.ts` | Типы всех сообщений и объектов: `ClientMessage`, `ServerMessage`, `StateMessage`, `Room`, `Track`, `CatalogTrack`, `SnapshotData`… Генерируется, в git не попадает. `Track` — любой трек, в том числе тот, что может играть только хозяин (`source: host`): он бывает в `playing`, `nowPlaying` и `add`. `CatalogTrack` — трек каталога Яндекса: элементы очереди и `recent`, результаты поиска и проверки |
 | `generated/schemas.ts` | Все схемы для Ajv, `schemaBaseId`, списки `clientMessageTypes` и `serverMessageTypes`. Генерируется |
 | `validate.ts` | `parseClientMessage`, `isServerMessage` |
 

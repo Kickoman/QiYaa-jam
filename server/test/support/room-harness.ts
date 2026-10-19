@@ -1,4 +1,9 @@
-import type { ClientMessage, ServerMessage, Track } from "../../src/protocol/generated/types.js";
+import type {
+  CatalogTrack,
+  ClientMessage,
+  ServerMessage,
+  Track,
+} from "../../src/protocol/generated/types.js";
 import { createRoom, reduce } from "../../src/room/room.js";
 import type { Effect, RoomEvent, RoomState } from "../../src/room/types.js";
 import type { SettingsPatch } from "../../src/protocol/generated/types.js";
@@ -10,7 +15,7 @@ export const HOST_CONNECTION = "c-host";
 export const HOST_SECRET = "HostSecretHostSecretHostSecretHostSecret123";
 export const JOIN_SECRET = "JoinSecretJoinSecret12";
 
-export function track(id: string, title = `Track ${id}`): Track {
+export function track(id: string, title = `Track ${id}`): CatalogTrack {
   return {
     id,
     albumId: "1",
@@ -19,6 +24,11 @@ export function track(id: string, title = `Track ${id}`): Track {
     durationMs: 200_000,
     coverUri: `avatars.yandex.net/get-music-content/1/${id}/%%`,
   };
+}
+
+/** A track only the host can play (HOST-37): its own id, no album, no cover. */
+export function hostTrack(id: string, title = `Own ${id}`): Track {
+  return { id, source: "host", title, artists: ["Наш гурт"], durationMs: 214_000 };
 }
 
 export function participantId(number: number): string {
@@ -106,7 +116,7 @@ export class RoomHarness {
     });
   }
 
-  cacheResults(guest: string, tracks: readonly Track[]): void {
+  cacheResults(guest: string, tracks: readonly CatalogTrack[]): void {
     const effects = this.send(guest, { type: "search", id: "g-search", text: "anything" });
     const request = toHost(effects)[0];
     if (request?.type !== "searchRequest") {

@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import type { Room, Track } from "../../server/src/protocol/generated/types.js";
+import type { CatalogTrack, Room } from "../../server/src/protocol/generated/types.js";
 import { addButton } from "../src/add-state.js";
 import { reasonText, text } from "../src/i18n.js";
 import { cleanSearch, JamSession, type AddState } from "../src/session.js";
 import { fakeEnvironment, memoryStorage } from "./support/fake-environment.js";
 
-function track(id: string): Track {
+function track(id: string): CatalogTrack {
   return { id, title: `t${id}`, artists: ["a"], durationMs: 1 };
 }
 

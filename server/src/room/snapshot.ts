@@ -2,6 +2,7 @@ import type { NowPlaying, SnapshotData } from "../protocol/generated/types.js";
 import { ROOM_MAX_AGE_MS } from "./limits.js";
 import { itemNumber } from "./ordering.js";
 import { nextFallback } from "./seeds.js";
+import { isCatalogTrack } from "./tracks.js";
 import type { RoomState } from "./types.js";
 
 export function toSnapshot(room: RoomState): SnapshotData {
@@ -73,6 +74,11 @@ export function snapshotProblem(data: SnapshotData, now: number): string | null 
   }
   if (itemIds.some((itemId) => itemNumber(itemId) >= room.nextItemNumber)) {
     return "an itemId is not below nextItemNumber";
+  }
+  const current = room.nowPlaying;
+  const currentItem = current.source === "item" || current.itemId !== undefined;
+  if (currentItem && current.track && !isCatalogTrack(current.track)) {
+    return "the current item is a track only the host can play";
   }
   return null;
 }

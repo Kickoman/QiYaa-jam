@@ -13,6 +13,7 @@
 | `ordering.ts` | `orderQueue` — порядок очереди по `spec/jam/ordering` |
 | `seeds.ts` | `pickSeeds`, `nextFallback` — сиды волны по `spec/jam/seeds.md` |
 | `snapshot.ts` | `toSnapshot`, `fromSnapshot`, `snapshotProblem` — снимок комнаты по `recovery.md` |
+| `tracks.ts` | `isCatalogTrack` — трек каталога Яндекса или трек, который может играть только хозяин |
 | `view.ts` | `stateFor`, `roomFor`, `orderedQueue` — `state` для одного участника |
 | `limits.ts` | Все числа из `spec/jam/limits.md` |
 | `secrets.ts` | `hashSecret` — SHA-256 в hex |
@@ -69,6 +70,13 @@ type Outcome = { room: RoomState | null; effects: readonly Effect[] };   // room
 - Отказ никогда не меняет комнату: `reduce` возвращает тот же объект.
 - Секретов в `RoomState` нет, только хэши (ROOM-64). Сырые `participantId` и `joinSecret` видит
   только `onJoin` и сразу хэширует.
+- Элементы очереди, `recent` и кэш поиска хранят только треки каталога (`CatalogTrack`). Трек,
+  который может играть только хозяин (`track.source: host`, HOST-37), бывает только в `nowPlaying`
+  с `source: wave`: он хранится и уходит в `state` как прислан, вместе с `source` (ROOM-67), и
+  никогда не попадает в `recent` и в сиды (SEED-09).
+- `add` такого трека — `rejected{not-allowed}` (ROOM-66), и от хозяина, и от гостя QiYaa. Проверка
+  идёт раньше всех остальных, так что гостевой трек не доходит до хозяина: ни `validateRequest`, ни
+  таймера.
 
 **Ловушки:**
 - `newPublicId` должен быть свободен. Занятый — это ошибка вызывающего, и `reduce` бросает
@@ -78,6 +86,8 @@ type Outcome = { room: RoomState | null; effects: readonly Effect[] };   // room
 - Кэш результатов поиска (`searchCache`) и запросы к хозяину (`pending`) в снимок не попадают:
   после восстановления гость ищет заново.
 - Когда хозяин уходит, все запросы к нему сразу получают `host-offline`, не дожидаясь тайм-аута.
+- `CatalogTrack` в схемах — это `Track & {source?: "yandex"}`. Сузить `Track` до него можно только
+  предикатом `isCatalogTrack`: стиль запрещает `as`.
 - Лимиты частоты (`add`, `search`) проверяет `net`, а не комната.
 - `resume` проверяет только секрет хозяина. Можно ли поднять комнату из снимка (снимок, секрет,
   лимиты на комнаты), решает `net` до события.
@@ -95,10 +105,15 @@ function fromSnapshot(data: SnapshotData, now: number): RoomState;
 
 - `toSnapshot` проходит схему `snapshot-data` и не содержит секретов — это проверяет тест.
 - `snapshotProblem` ловит то, что схема не видит: комната старше `ROOM_MAX_AGE_MS` (REC-07), не
-  ровно один хозяин, повтор `publicId` или `itemId`, `itemId` не меньше `nextItemNumber`.
+  ровно один хозяин, повтор `publicId` или `itemId`, `itemId` не меньше `nextItemNumber`, текущий
+  элемент (`nowPlaying` с `source: item` или с `itemId`) с треком не из каталога.
 - `fromSnapshot`: все участники не в сети, `hostLeftAt` = `now`, кэш поиска и запросы к хозяину
   пустые. Сиды пересчитываются, `seedsVersion` растёт, только если набор другой (SEED-10).
 - Файл комнат при плановом перезапуске (`net/persistence.ts`) хранит те же снимки.
+
+**Ловушка:** `nowPlaying` в схеме снимка ссылается на обычный `Track`, так что схема пропускает
+текущий элемент с треком, который может играть только хозяин. Снимок присылает хозяин (REC-06), и
+такой трек попал бы в сиды. Отказывает ему `snapshotProblem` (REC-08, `room-not-found`).
 
 ## `ordering.ts`
 

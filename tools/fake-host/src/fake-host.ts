@@ -1,5 +1,6 @@
 import { WebSocket } from "ws";
 import type {
+  CatalogTrack,
   ClientMessage,
   QueueItem,
   ServerMessage,
@@ -11,7 +12,7 @@ import { searchCatalog } from "./catalog.js";
 export type FakeHostOptions = {
   readonly url: string;
   readonly name: string;
-  readonly catalog: readonly Track[];
+  readonly catalog: readonly CatalogTrack[];
   readonly speed: number;
   readonly log?: (line: string) => void;
   /** Listening along (experimental): the file a guest may play for a track. */

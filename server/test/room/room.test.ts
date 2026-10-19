@@ -11,6 +11,7 @@ import {
   ROOM_ID,
   RoomHarness,
   hasState,
+  hostTrack,
   participantId,
   reasonOf,
   sent,
@@ -317,6 +318,35 @@ describe("add", () => {
     expect(reasonOf(jam.add(HOST, "99999"))).toBe("queue-limit");
     expect(jam.room.queue).toHaveLength(QUEUE_LENGTH);
   });
+
+  it("ROOM-66 the host's add of a track only the host can play is not-allowed and changes nothing", () => {
+    const jam = new RoomHarness();
+    const before = jam.room;
+    const effects = jam.send(HOST, { type: "add", id: "h1", track: hostTrack("own-1") });
+    expect(sent(effects)).toEqual([{ type: "rejected", id: "h1", reason: "not-allowed" }]);
+    expect(hasState(effects)).toBe(false);
+    expect(jam.room).toBe(before);
+  });
+
+  it("ROOM-66 a QiYaa guest's track only the host can play is not-allowed at once, without a validateRequest", () => {
+    const jam = new RoomHarness();
+    const borya = jam.guest("Боря", "qiyaa");
+    const effects = jam.send(borya, { type: "add", id: "q1", track: hostTrack("own-1") });
+    expect(sent(effects, `c-${borya}`)).toEqual([
+      { type: "rejected", id: "q1", reason: "not-allowed" },
+    ]);
+    expect(toHost(effects)).toEqual([]);
+    expect(effects.some((effect) => effect.kind === "timer")).toBe(false);
+    expect(jam.room.pending).toEqual([]);
+  });
+
+  it("ROOM-66 a track with source yandex is a track of the catalog and is added", () => {
+    const jam = new RoomHarness();
+    const catalogTrack = { ...track("100"), source: "yandex" as const };
+    const effects = jam.send(HOST, { type: "add", id: "h1", track: catalogTrack });
+    expect(sent(effects)).toEqual([{ type: "ack", id: "h1" }]);
+    expect(jam.room.queue[0]?.track).toEqual(catalogTrack);
+  });
 });
 
 describe("search", () => {
@@ -598,6 +628,52 @@ describe("what plays", () => {
     expect(jam.room.nowPlaying.source).toBe("idle");
     expect(jam.room.recent).toHaveLength(1);
     expect(jam.room.participants[0]?.lastServedAt).toBe(served);
+  });
+
+  it("ROOM-67 a track only the host can play becomes nowPlaying as sent, source included, and goes out in the next state", () => {
+    const jam = new RoomHarness();
+    const anya = jam.guest("Аня");
+    const own = hostTrack("own-1");
+    jam.now += 1_000;
+    const effects = jam.send(HOST, {
+      type: "playing",
+      source: "wave",
+      track: own,
+      positionMs: 5_000,
+      paused: false,
+    });
+    expect(hasState(effects)).toBe(true);
+    expect(jam.room.nowPlaying).toEqual({
+      source: "wave",
+      track: own,
+      positionMs: 5_000,
+      paused: false,
+      reportedAt: jam.now,
+    });
+    const state = stateFor(jam.room, anya, jam.now);
+    expect(state.room.nowPlaying.track).toEqual(own);
+    expect(isServerMessage(state)).toBe(true);
+  });
+
+  it("ROOM-67 SEED-09 a track only the host can play is neither a seed nor recent; the next item follows it as usual", () => {
+    const jam = new RoomHarness();
+    jam.add(HOST, "1");
+    jam.send(HOST, { type: "started", itemId: "i1" });
+    const fallback = jam.room.fallback;
+    jam.send(HOST, {
+      type: "playing",
+      source: "wave",
+      track: hostTrack("own-1"),
+      positionMs: 0,
+      paused: false,
+    });
+    expect(jam.room.fallback).toEqual(fallback);
+    expect(jam.room.recent.map((item) => item.itemId)).toEqual(["i1"]);
+    jam.add(HOST, "2");
+    jam.send(HOST, { type: "started", itemId: "i2" });
+    expect(jam.room.nowPlaying).toMatchObject({ source: "item", itemId: "i2" });
+    expect(jam.room.recent.map((item) => item.itemId)).toEqual(["i1"]);
+    expect(jam.room.fallback.seeds).toEqual(["track:2", "track:1"]);
   });
 });
 

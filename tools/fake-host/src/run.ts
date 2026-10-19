@@ -1,12 +1,12 @@
 import QRCode from "qrcode";
-import type { Track } from "../../../server/src/protocol/generated/types.js";
+import type { CatalogTrack } from "../../../server/src/protocol/generated/types.js";
 import { FakeHost } from "./fake-host.js";
 
 export type RunOptions = {
   readonly url: string;
   readonly name: string;
   readonly speed: number;
-  readonly catalog: readonly Track[];
+  readonly catalog: readonly CatalogTrack[];
   readonly dropAfterSeconds: number | null;
   readonly restartAfterSeconds: number | null;
 };

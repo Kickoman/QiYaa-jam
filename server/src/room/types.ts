@@ -1,9 +1,9 @@
 import type {
+  CatalogTrack,
   ClientMessage,
   NowPlaying,
   ServerMessage,
   Settings,
-  Track,
 } from "../protocol/generated/types.js";
 import type { Fallback } from "./seeds.js";
 
@@ -21,7 +21,7 @@ export type Participant = {
 
 export type Item = {
   readonly itemId: string;
-  readonly track: Track;
+  readonly track: CatalogTrack;
   readonly addedBy: string;
   readonly addedAt: number;
   readonly pinnedAt: number | null;
@@ -29,12 +29,12 @@ export type Item = {
 
 export type RecentItem = {
   readonly itemId: string;
-  readonly track: Track;
+  readonly track: CatalogTrack;
   readonly addedBy: string;
   readonly playedAt: number;
 };
 
-export type CachedTrack = { readonly track: Track; readonly at: number };
+export type CachedTrack = { readonly track: CatalogTrack; readonly at: number };
 
 export type PendingRequest = {
   readonly kind: "search" | "validate";
@@ -42,7 +42,7 @@ export type PendingRequest = {
   readonly connection: string;
   readonly guest: string;
   readonly id: string;
-  readonly track: Track | null;
+  readonly track: CatalogTrack | null;
 };
 
 export type RoomState = {

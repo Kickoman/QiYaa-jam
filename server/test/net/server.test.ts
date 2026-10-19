@@ -106,6 +106,27 @@ describe("frames and violations", () => {
     expect(await client.closed).toEqual({ code: 1008 });
   });
 
+  it("ROOM-56 ROOM-67 the host's playing of a track only the host can play with listenUrl or listenNextUrl is refused, then closed with 1008", async () => {
+    const link =
+      "https://s963sas.storage.yandex.net/get-mp3/0123456789abcdef0123456789abcdef/00065cd937b03427/rmusic/own.mp3";
+    for (const links of [{ listenUrl: link }, { listenNextUrl: link }]) {
+      const { host } = await hostWithRoom();
+      host.send({
+        type: "playing",
+        source: "wave",
+        track: { id: "own-1", source: "host", title: "Own", artists: [], durationMs: 214_000 },
+        positionMs: 0,
+        paused: false,
+        ...links,
+      });
+      expect(await host.nextOf("rejected")).toEqual({
+        type: "rejected",
+        reason: "invalid-message",
+      });
+      expect(await host.closed).toEqual({ code: 1008 });
+    }
+  });
+
   it("ROOM-57 after three violations the IP gets 429 until the ban ends", async () => {
     const headers = freshIp();
     for (let violation = 0; violation < 3; violation++) {

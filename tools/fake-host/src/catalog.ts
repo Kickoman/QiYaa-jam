@@ -1,16 +1,20 @@
 import { readFileSync } from "node:fs";
-import type { Track } from "../../../server/src/protocol/generated/types.js";
+import type { CatalogTrack } from "../../../server/src/protocol/generated/types.js";
 
-export function loadCatalog(): readonly Track[] {
+export function loadCatalog(): readonly CatalogTrack[] {
   const path = new URL("../catalog.json", import.meta.url);
-  return JSON.parse(readFileSync(path, "utf8")) as Track[];
+  return JSON.parse(readFileSync(path, "utf8")) as CatalogTrack[];
 }
 
 function normalized(text: string): string {
   return text.toLowerCase().replace(/ё/g, "е").trim();
 }
 
-export function searchCatalog(catalog: readonly Track[], text: string, limit: number): Track[] {
+export function searchCatalog(
+  catalog: readonly CatalogTrack[],
+  text: string,
+  limit: number,
+): CatalogTrack[] {
   const words = normalized(text)
     .split(/\s+/)
     .filter((word) => word.length > 0);

@@ -12,6 +12,7 @@ import {
   PUBLIC_URL,
   RoomHarness,
   hasState,
+  hostTrack,
   participantId,
   reasonOf,
   sent,
@@ -159,6 +160,30 @@ describe("snapshots", () => {
       expect(text).not.toContain(secret);
     }
     expect(snapshot.room.kicked).toHaveLength(1);
+  });
+
+  it("ROOM-67 REC-06 a track only the host can play stays in nowPlaying through the snapshot and the raised room", () => {
+    const { jam } = evening();
+    const own = hostTrack("own-1");
+    jam.send(HOST, { type: "playing", source: "wave", track: own, positionMs: 0, paused: false });
+    const snapshot = toSnapshot(jam.room);
+    expect(isSnapshotData(snapshot)).toBe(true);
+    expect(snapshotProblem(snapshot, jam.now)).toBeNull();
+    expect(fromSnapshot(snapshot, jam.now).nowPlaying.track).toEqual(own);
+  });
+
+  it("REC-08 ROOM-66 a snapshot whose current item is a track only the host can play is refused", () => {
+    const { jam } = evening();
+    const snapshot = toSnapshot(jam.room);
+    const current = snapshot.room.nowPlaying;
+    for (const nowPlaying of [
+      { ...current, track: hostTrack("own-1") },
+      { ...current, source: "wave" as const, track: hostTrack("own-1") },
+    ]) {
+      const forged = { ...snapshot, room: { ...snapshot.room, nowPlaying } };
+      expect(isSnapshotData(forged)).toBe(true);
+      expect(snapshotProblem(forged, jam.now)).toMatch(/only the host can play/);
+    }
   });
 
   it("REC-06 a room raised from its snapshot is the same room, with every guest offline and the host back", () => {

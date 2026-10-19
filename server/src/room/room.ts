@@ -1,6 +1,7 @@
 import { withoutListenUrls } from "./snapshot.js";
 import type {
   AddMessage,
+  CatalogTrack,
   NowPlaying,
   PlayingMessage,
   RejectedMessage,
@@ -8,7 +9,6 @@ import type {
   ServerMessage,
   Settings,
   SettingsPatch,
-  Track,
   ValidateResultMessage,
 } from "../protocol/generated/types.js";
 import {
@@ -25,6 +25,7 @@ import {
 } from "./limits.js";
 import { hashSecret } from "./secrets.js";
 import { nextFallback, type SeedCandidate } from "./seeds.js";
+import { isCatalogTrack } from "./tracks.js";
 import type {
   Effect,
   Fresh,
@@ -199,7 +200,7 @@ function addRefusal(room: RoomState, adder: Participant, trackId: string): Reaso
 function addItem(
   room: RoomState,
   adder: Participant,
-  track: Track,
+  track: CatalogTrack,
   connection: string,
   id: string,
   now: number,
@@ -228,6 +229,7 @@ function leaveNowPlaying(room: RoomState, now: number): readonly RecentItem[] {
     current.source !== "item" ||
     current.itemId === undefined ||
     !current.track ||
+    !isCatalogTrack(current.track) ||
     current.addedBy === undefined
   ) {
     return room.recent;
@@ -294,7 +296,12 @@ function onPlaying(room: RoomState, message: PlayingMessage, now: number): Outco
   return changed(room, { ...room, recent: leaveNowPlaying(room, now), nowPlaying });
 }
 
-function cachedTrack(room: RoomState, guest: string, trackId: string, now: number): Track | null {
+function cachedTrack(
+  room: RoomState,
+  guest: string,
+  trackId: string,
+  now: number,
+): CatalogTrack | null {
   const entries = room.searchCache.get(guest) ?? [];
   const fresh = entries.filter((entry) => entry.at > now - SEARCH_CACHE_MS);
   return fresh.findLast((entry) => entry.track.id === trackId)?.track ?? null;
@@ -321,6 +328,9 @@ function onAdd(
   }
   if (!track) {
     return refuse(room, connection, id, "not-allowed");
+  }
+  if (!isCatalogTrack(track)) {
+    return refuse(room, connection, id, "not-allowed"); // ROOM-66: before the host is asked
   }
   if (sender.kind === "host") {
     return addItem(room, sender, track, connection, id, now);

@@ -201,3 +201,36 @@ describe("a whole evening with the fake host", () => {
     back.close();
   });
 });
+
+describe("the host's own track", () => {
+  it("HOST-37 LISTEN-14 a track only the host can play goes out without links, and the host stays connected", async () => {
+    const url = await startServer();
+    const host = new FakeHost({
+      url,
+      name: "Маша",
+      catalog,
+      speed: 1,
+      listenUrl: (track) =>
+        `https://s1.storage.yandex.net/get-mp3/0123456789abcdef0123456789abcdef/65cd937b03427/${track.id}.mp3`,
+    });
+    hosts.push(host);
+    const session = await host.create();
+    const guest = await joinGuest(url, session, 1, "Аня");
+    host.playHostTrack({
+      id: "own-1",
+      title: "Свой трэк",
+      artists: ["Наш гурт"],
+      durationMs: 214_000,
+    });
+    const state = await guest.stateWhere(
+      (candidate) => candidate.room.nowPlaying.track?.id === "own-1",
+    );
+    expect(state.room.nowPlaying).toMatchObject({
+      source: "wave",
+      track: { id: "own-1", source: "host", title: "Свой трэк", artists: ["Наш гурт"] },
+    });
+    expect(state.room.nowPlaying.listenUrl).toBeUndefined();
+    expect(host.isOnline).toBe(true);
+    guest.close();
+  });
+});

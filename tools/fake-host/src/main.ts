@@ -3,7 +3,7 @@ import { loadCatalog } from "./catalog.js";
 import { runFakeHost } from "./run.js";
 
 const USAGE = `usage: fake-host [--server ws://localhost:8090/ws] [--name Имитатор]
-                 [--speed 10] [--drop-after <s>] [--restart-after <s>]
+                 [--speed 10] [--drop-after <s>] [--restart-after <s>] [--host-track-after <s>]
 `;
 
 const { values } = parseArgs({
@@ -13,6 +13,7 @@ const { values } = parseArgs({
     speed: { type: "string", default: "10" },
     "drop-after": { type: "string" },
     "restart-after": { type: "string" },
+    "host-track-after": { type: "string" },
     help: { type: "boolean", default: false },
   },
 });
@@ -31,4 +32,6 @@ await runFakeHost({
   dropAfterSeconds: values["drop-after"] === undefined ? null : Number(values["drop-after"]),
   restartAfterSeconds:
     values["restart-after"] === undefined ? null : Number(values["restart-after"]),
+  hostTrackAfterSeconds:
+    values["host-track-after"] === undefined ? null : Number(values["host-track-after"]),
 });

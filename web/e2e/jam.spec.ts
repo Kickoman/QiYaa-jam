@@ -152,6 +152,50 @@ test("LISTEN-07 LISTEN-12 a guest listens along to the host's file, shown on the
   await world.end();
 });
 
+test("LISTEN-14 a track only the host can play shows its title and artists, no cover or vibe lamp, and offers no listening", async ({
+  browser,
+}) => {
+  const world = new World();
+  await world.startServer(false);
+  const host = world.host(
+    (track) =>
+      `https://s1.storage.yandex.net/get-mp3/0123456789abcdef0123456789abcdef/65cd937b03427/${track.id}.mp3`,
+  );
+  const session = await host.create();
+  const anya = await guest(browser, session, "Аня");
+  const files: string[] = [];
+  const mp3 = readFileSync(new URL("fixtures/sine440_3s.mp3", import.meta.url));
+  await anya.route("https://*.storage.yandex.net/**", async (route) => {
+    files.push(new URL(route.request().url()).pathname);
+    await route.fulfill({ status: 200, contentType: "audio/mpeg", body: mp3 });
+  });
+  await addFirst(anya, "Queen", 0);
+  const now = anya.locator("section.now");
+  await now.locator("button", { hasText: "Слухаць тут" }).click();
+  const stop = now.locator("button", { hasText: "Спыніць" });
+  await expect(stop).toBeVisible();
+  await expect.poll(() => files.length).toBeGreaterThan(0);
+  host.playHostTrack({
+    id: "own-1",
+    title: "Свой трэк",
+    artists: ["Наш гурт"],
+    durationMs: 214_000,
+  });
+  await expect(now.locator(".track-title")).toHaveText("Свой трэк");
+  await expect(now.locator(".track-artists")).toHaveText("Наш гурт");
+  await expect(now.locator("img.cover")).toHaveCount(0);
+  await expect(now.getByText("Хваля джэма")).toHaveCount(0);
+  await expect(now.locator("a")).toHaveCount(0);
+  await expect(stop).toBeVisible();
+  await expect
+    .poll(() => anya.evaluate(() => navigator.mediaSession.metadata?.title ?? null))
+    .toBe("Свой трэк");
+  expect(await anya.evaluate(() => navigator.mediaSession.metadata?.artwork.length ?? -1)).toBe(0);
+  await stop.click();
+  await expect(now.locator("button", { hasText: "Слухаць тут" })).toHaveCount(0);
+  await world.end();
+});
+
 test("a planned server restart keeps the room; guests reconnect by themselves", async ({
   browser,
 }) => {

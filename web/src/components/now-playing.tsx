@@ -47,11 +47,12 @@ export function NowPlaying({ t, room, names, serverNow, onSkip, listening, onLis
         <div class="now-text">
           <p class="track-title">{track.title}</p>
           <p class="track-artists">{track.artists.join(", ")}</p>
-          {playing.source === "wave" ? (
-            <Lamp on>{t("jamWave")}</Lamp>
-          ) : (
+          {playing.source === "item" ? (
             <p class="who">{t("addedBy", { name: names.get(playing.addedBy ?? "") ?? "?" })}</p>
-          )}
+          ) : null}
+          {playing.source === "wave" && track.source !== "host" ? (
+            <Lamp on>{t("jamWave")}</Lamp>
+          ) : null}
         </div>
       </div>
       <div class="screen now-time">

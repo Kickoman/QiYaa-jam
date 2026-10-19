@@ -1,5 +1,5 @@
 import QRCode from "qrcode";
-import type { CatalogTrack } from "../../../server/src/protocol/generated/types.js";
+import type { CatalogTrack, Track } from "../../../server/src/protocol/generated/types.js";
 import { FakeHost } from "./fake-host.js";
 
 export type RunOptions = {
@@ -9,6 +9,15 @@ export type RunOptions = {
   readonly catalog: readonly CatalogTrack[];
   readonly dropAfterSeconds: number | null;
   readonly restartAfterSeconds: number | null;
+  readonly hostTrackAfterSeconds: number | null;
+};
+
+/** What `--host-track-after` plays: a track only the host can play (HOST-37). */
+const HOST_TRACK: Pick<Track, "id" | "title" | "artists" | "durationMs"> = {
+  id: "own-1",
+  title: "Свой трэк",
+  artists: ["Имитатор"],
+  durationMs: 180_000,
 };
 
 function print(line: string): void {
@@ -28,6 +37,11 @@ export async function runFakeHost(options: RunOptions): Promise<FakeHost> {
     setTimeout(() => {
       host.drop(true);
     }, options.dropAfterSeconds * 1_000);
+  }
+  if (options.hostTrackAfterSeconds !== null) {
+    setTimeout(() => {
+      host.playHostTrack(HOST_TRACK);
+    }, options.hostTrackAfterSeconds * 1_000);
   }
   if (options.restartAfterSeconds !== null) {
     setTimeout(() => {

@@ -26,4 +26,6 @@ await runFakeHost({
   catalog: loadCatalog(),
   dropAfterSeconds: null,
   restartAfterSeconds: null,
+  hostTrackAfterSeconds:
+    process.env.HOST_TRACK_AFTER === undefined ? null : Number(process.env.HOST_TRACK_AFTER),
 });

@@ -100,6 +100,17 @@ function item(
   };
 }
 
+/** HOST-37: a base track only the host can play; it never comes with a link (LISTEN-14). */
+function hostWave(positionMs: number): NowPlaying {
+  return {
+    source: "wave",
+    track: { id: "own-1", source: "host", title: "Свой трэк", artists: [], durationMs: 214_000 },
+    positionMs,
+    paused: false,
+    reportedAt: 95_000,
+  };
+}
+
 describe("listening along", () => {
   it("LISTEN-09 a file that ends first goes on with the next link, and the stale state keeps it", () => {
     const { audio, listener } = setup();
@@ -162,6 +173,19 @@ describe("listening along", () => {
     listener.follow(item(undefined, 1_000));
     expect(audio.paused).toBe(true);
     expect(listener.isListening).toBe(true);
+  });
+
+  it("LISTEN-14 LISTEN-10 a track only the host can play pauses the sound, keeps listening on, and the next link plays", () => {
+    const { audio, listener } = setup();
+    listener.start();
+    listener.follow(item(LINK_A, 30_000));
+    audio.loaded();
+    listener.follow(hostWave(1_000));
+    expect(audio.paused).toBe(true);
+    expect(listener.isListening).toBe(true);
+    listener.follow(item(LINK_B, 0));
+    expect(audio.src).toBe(LINK_B);
+    expect(audio.paused).toBe(false);
   });
 
   it("LISTEN-11 a pause from outside ends the listening; its own pauses and the end of a file do not", () => {

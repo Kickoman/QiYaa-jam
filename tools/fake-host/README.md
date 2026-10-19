@@ -9,7 +9,7 @@
 |---|---|
 | `src/fake-host.ts` | `FakeHost` — соединение, зеркало очереди, проигрывание, волна-заглушка, `outbox`, `resume` |
 | `src/catalog.ts` | `loadCatalog`, `searchCatalog` — поиск по `catalog.json` |
-| `src/run.ts` | `runFakeHost` — запуск с печатью ссылки и QR, `--drop-after`, `--restart-after` |
+| `src/run.ts` | `runFakeHost` — запуск с печатью ссылки и QR, `--drop-after`, `--restart-after`, `--host-track-after` |
 | `src/main.ts` | CLI против уже запущенного сервера |
 | `src/dev.ts` | `npm run dev`: сервер и имитатор в одном процессе |
 | `catalog.json` | 210 треков из публичного каталога Яндекс Музыки |
@@ -22,6 +22,7 @@
 npm run dev                                   # из корня: сервер на :8090 и имитатор, ссылка и QR в терминале
 PUBLIC_URL=http://192.168.0.106:8090 npm run dev   # чтобы открыть ссылку с телефона в той же сети
 SPEED=60 npm run dev                          # трек идёт в 60 раз быстрее
+HOST_TRACK_AFTER=30 npm run dev               # через 30 с играет трек, который может играть только хозяин
 
 npm start -w tools/fake-host -- --server wss://jam.example.org/ws --speed 1 --drop-after 60
 ```
@@ -36,6 +37,7 @@ npm start -w tools/fake-host -- --server wss://jam.example.org/ws --speed 1 --dr
 | `--speed` | `10` | Во сколько раз быстрее идут треки |
 | `--drop-after <s>` | нет | Через столько секунд оборвать соединение; переподключение через 1, 2, 4 … 30 с |
 | `--restart-after <s>` | нет | Через столько секунд «перезапустить приложение»: новое соединение с сохранённой сессией, снимком и `outbox` |
+| `--host-track-after <s>` | нет | Через столько секунд сыграть трек, который может играть только хозяин (`playHostTrack`) |
 
 ## `src/fake-host.ts`
 
@@ -45,6 +47,7 @@ class FakeHost {
   create(): Promise<Session>;          // hello, create; Session = {roomId, hostSecret, joinUrl}
   resume(): Promise<boolean>;          // resume со снимком и outbox; false — отказ
   drop(reconnectAutomatically: boolean): void;
+  playHostTrack(track: {id; title; artists; durationMs}): void;   // HOST-37, сразу
   settings(patch): void;  end(): void;  stop(): void;
   readonly started: string[];          // itemId в порядке начала
   readonly waveTracks: string[];
@@ -62,7 +65,11 @@ class FakeHost {
 - без связи треки идут дальше, `started` копятся в `outbox`, после `resume` уходит `playing`
   (HOST-25, HOST-26);
 - поиск — подстроки всех слов запроса в названии и исполнителях, до 20 треков; проверка — трек из
-  каталога или `track-unavailable`.
+  каталога или `track-unavailable`;
+- `playHostTrack` — трек не из каталога, например локальный файл: `playing{source: wave}` с
+  `track.source: host`, без альбома, обложки и ссылок прослушивания, даже при `listenUrl`
+  (HOST-37, LISTEN-14). Он играет сразу, а настоящий хозяин выбором во время джема ничего сразу
+  не включает (HOST-21): это упрощение для тестов и ручной проверки.
 
 **Ловушки:**
 - `playing` уходит только при смене трека, без позиции раз в 10 с.
@@ -84,3 +91,5 @@ class FakeHost {
   один раз и что после очереди играет волна.
 - **Падение сервера:** хозяин поднимает комнату на новом сервере из своего снимка, гость
   возвращается тем же участником, элементы на месте.
+- **Свой трек хозяина (HOST-37, LISTEN-14):** гость получает его в `nowPlaying` как прислан, с
+  `source: host`, без ссылок, а хозяин остаётся на связи.

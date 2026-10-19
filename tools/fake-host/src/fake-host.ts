@@ -137,6 +137,30 @@ export class FakeHost {
     this.socket?.close();
   }
 
+  /**
+   * HOST-37: a track only the host can play, a local file for one, plays at once as a base track.
+   * A real host starts nothing at once (HOST-21); here it is a shortcut for tests and a manual run.
+   */
+  playHostTrack(track: Pick<Track, "id" | "title" | "artists" | "durationMs">): void {
+    clearTimeout(this.trackTimer);
+    if (this.stopped) {
+      return;
+    }
+    this.current = {
+      kind: "wave",
+      track: {
+        id: track.id,
+        source: "host",
+        title: track.title,
+        artists: track.artists,
+        durationMs: track.durationMs,
+      },
+    };
+    this.log(`host track: ${track.artists.join(", ")} — ${track.title}`);
+    this.reportPlaying();
+    this.scheduleNext(track.durationMs);
+  }
+
   waitFor(matches: (message: ServerMessage) => boolean): Promise<ServerMessage> {
     return new Promise((resolve) => {
       this.waiters.push({ matches, resolve });
@@ -300,10 +324,16 @@ export class FakeHost {
       this.log(`jam wave: ${track.artists.join(", ")} — ${track.title}`);
     }
     this.reportPlaying();
-    const durationMs = Math.max(1, this.current.track.durationMs / this.options.speed);
-    this.trackTimer = setTimeout(() => {
-      this.playNext();
-    }, durationMs);
+    this.scheduleNext(this.current.track.durationMs);
+  }
+
+  private scheduleNext(durationMs: number): void {
+    this.trackTimer = setTimeout(
+      () => {
+        this.playNext();
+      },
+      Math.max(1, durationMs / this.options.speed),
+    );
   }
 
   private waveTrack(): Track | null {
@@ -333,7 +363,9 @@ export class FakeHost {
     if (!current || !this.online) {
       return;
     }
-    const link = this.options.listenUrl?.(current.track);
+    // LISTEN-14: there is no file a guest could fetch for a track only the host can play.
+    const link =
+      current.track.source === "host" ? undefined : this.options.listenUrl?.(current.track);
     const listen = link === undefined ? {} : { listenUrl: link };
     if (current.kind === "item") {
       this.send({

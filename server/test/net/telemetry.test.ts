@@ -149,8 +149,10 @@ describe("telemetry", () => {
   it("TEL-11 an api error's status is api_status, not the store's http_status", async () => {
     const before = logged.length;
     await post(example("session.json"));
-    await expect.poll(() => since(before).find((line) => line.event === "app_error")).toBeTruthy();
-    const error = since(before).find((line) => line.event === "app_error");
+    const apiError = (line: (typeof logged)[number]) =>
+      line.event === "app_error" && line.area === "api";
+    await expect.poll(() => since(before).find(apiError)).toBeTruthy();
+    const error = since(before).find(apiError);
     expect(error).toMatchObject({ level: "warn", area: "api", kind: "http", api_status: 502 });
     expect(error).not.toHaveProperty("http_status");
   });

@@ -4,9 +4,19 @@ import { extname, join, normalize, sep } from "node:path";
 import { emit, type LogFields } from "../log.js";
 import { DOWNLOAD_PATH, DownloadReceiver } from "./downloads.js";
 import { clientIp } from "./real-ip.js";
+import {
+  fillPublicUrl,
+  ROBOTS_PATH,
+  robotsTxt,
+  SITE_PAGES,
+  SITEMAP_PATH,
+  sitemapXml,
+} from "./site.js";
 import { TELEMETRY_PATH, TelemetryReceiver } from "./telemetry.js";
 
 export type HttpOptions = {
+  /** The server's address: the landing's absolute links start with it (ROOM-68). */
+  readonly publicUrl: string;
   readonly assetlinksJson: string | null;
   readonly webRoot: string | null;
   /** Proxies whose X-Real-IP names the client (ROOM-60); none: the socket's address. */
@@ -27,19 +37,14 @@ const CONTENT_TYPES: Readonly<Record<string, string>> = {
 
 const ROOM_PAGE = /^\/j\/[0-9a-hjkmnp-tv-z]{8}$/;
 
-/** The landing in each language (web/site); `/` is Belarusian, the apps' default. */
-const SITE_PAGES: ReadonlyMap<string, string> = new Map([
-  ["/", "site/be.html"],
-  ["/ru", "site/ru.html"],
-  ["/en", "site/en.html"],
-]);
-
 const FIXED_ROUTES: ReadonlySet<string> = new Set([
   "/healthz",
   "/.well-known/assetlinks.json",
   "/ws",
   TELEMETRY_PATH,
   DOWNLOAD_PATH,
+  ROBOTS_PATH,
+  SITEMAP_PATH,
 ]);
 
 /** Header values in a log are cut to this many characters. */
@@ -131,6 +136,7 @@ async function sendFile(
   webRoot: string,
   relativePath: string,
   cache: string,
+  fill: (body: Buffer) => Buffer | string = (body) => body,
 ): Promise<void> {
   const root = normalize(webRoot + sep);
   const path = normalize(join(root, relativePath));
@@ -145,10 +151,14 @@ async function sendFile(
         "content-type": CONTENT_TYPES[extname(path)] ?? "application/octet-stream",
         "cache-control": cache,
       })
-      .end(body);
+      .end(fill(body));
   } catch {
     notFound(response); // a missing or unreadable file is a 404 like any unknown path
   }
+}
+
+function sendText(response: ServerResponse, contentType: string, body: string): void {
+  response.writeHead(200, { "content-type": contentType, "cache-control": "no-cache" }).end(body);
 }
 
 type Receivers = {
@@ -205,9 +215,19 @@ async function serve(
     notFound(response);
     return;
   }
+  if (path === ROBOTS_PATH) {
+    sendText(response, "text/plain; charset=utf-8", robotsTxt(options.publicUrl));
+    return;
+  }
+  if (path === SITEMAP_PATH) {
+    sendText(response, "application/xml; charset=utf-8", sitemapXml(options.publicUrl));
+    return;
+  }
   const sitePage = SITE_PAGES.get(path);
   if (sitePage !== undefined) {
-    await sendFile(response, options.webRoot, sitePage, "no-cache");
+    await sendFile(response, options.webRoot, sitePage, "no-cache", (body) =>
+      fillPublicUrl(body.toString("utf8"), options.publicUrl),
+    );
     return;
   }
   if (ROOM_PAGE.test(path)) {

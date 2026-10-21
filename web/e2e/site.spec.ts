@@ -85,6 +85,27 @@ test("the landing in Belarusian at /, Russian at /ru and English at /en", async 
   await expect(page.locator("#jam h2")).toHaveText("Джем");
 });
 
+test("ROOM-68 the landing's absolute links, its link preview picture, robots.txt and sitemap.xml", async ({
+  page,
+  request,
+}) => {
+  await page.route("https://api.github.com/**", (route) => route.abort());
+  await page.goto(`${BASE}/ru`);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${BASE}/ru`);
+  await expect(page.locator('link[hreflang="be"]')).toHaveAttribute("href", `${BASE}/`);
+  const image = await page.locator('meta[property="og:image"]').getAttribute("content");
+  expect(image).toMatch(new RegExp(`^${BASE}/assets/og-[\\w-]+\\.png$`));
+  const picture = await request.get(image ?? "");
+  expect(picture.status()).toBe(200);
+  expect(picture.headers()["content-type"]).toBe("image/png");
+  expect(await (await request.get(`${BASE}/robots.txt`)).text()).toContain(
+    `Sitemap: ${BASE}/sitemap.xml`,
+  );
+  expect(await (await request.get(`${BASE}/sitemap.xml`)).text()).toContain(
+    `<loc>${BASE}/en</loc>`,
+  );
+});
+
 test("no sideways scrolling at 1440, 1024 and 390 px", async ({ page }) => {
   await page.route("https://api.github.com/**", (route) => route.abort());
   for (const width of [1440, 1024, 390]) {

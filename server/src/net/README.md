@@ -7,7 +7,8 @@
 | Файл | Что там |
 |---|---|
 | `server.ts` | `JamServer` — HTTP + WebSocket, реестр комнат, соединения, лимиты, таймеры |
-| `http.ts` | `createHttpServer` — `/healthz`, `assetlinks.json`, лендинг и веб-гость, два `POST`, остальное 404 |
+| `http.ts` | `createHttpServer` — `/healthz`, `assetlinks.json`, лендинг с `robots.txt` и `sitemap.xml`, веб-гость, два `POST`, остальное 404 |
+| `site.ts` | `SITE_PAGES`, `fillPublicUrl`, `robotsTxt`, `sitemapXml` — страницы лендинга и адрес сервера в них (ROOM-68) |
 | `ids.ts` | `ids` — случайные `roomId`, `publicId`, секреты, id запросов и соединений |
 | `real-ip.ts` | `clientIp`, `parseTrustedProxies` — IP клиента с учётом `X-Real-IP` |
 | `rate-limit.ts` | `RateLimiter` (token bucket), `Violations` (нарушения и бан) |
@@ -29,8 +30,7 @@ class JamServer {
   listen(port: number, host: string): Promise<AddressInfo>;
   close(): Promise<void>;   // соединения закрываются с 1001
 }
-type JamServerOptions = HttpOptions & {
-  publicUrl: string;                       // его origin — единственный разрешённый Origin браузера
+type JamServerOptions = HttpOptions & {   // origin из publicUrl — единственный разрешённый Origin браузера
   trustedProxies: ReadonlySet<string>;
   roomsFile?: string | null;               // файл комнат: читается при запуске, пишется в close()
   now?: () => number;                      // для тестов
@@ -101,6 +101,7 @@ Ping — каждые `PING_INTERVAL_MS`; соединение без pong до�
 
 ```ts
 function createHttpServer(options: {
+  publicUrl: string;                      // с него начинаются абсолютные ссылки лендинга (ROOM-68)
   assetlinksJson: string | null;
   webRoot: string | null;
   trustedProxies?: ReadonlySet<string>;   // для client_ip в логах и лимитов телеметрии
@@ -113,7 +114,8 @@ function createHttpServer(options: {
 | `POST /api/telemetry` | пакет телеметрии (`spec/telemetry`): 204, или 400 / 413 / 429; события — строками лога в потоке `telemetry` (TEL-11, TEL-12) |
 | `POST /api/download` | клик по кнопке скачивания лендинга (`spec/telemetry`, раздел The landing): 204, или 400 / 413 / 429; клик — полями строки этого запроса (TEL-14, TEL-15) |
 | `/.well-known/assetlinks.json` | тело из `ASSETLINKS_JSON`, если задано |
-| `/`, `/ru`, `/en` | лендинг: `webRoot/site/be.html`, `ru.html`, `en.html`, `no-cache` |
+| `/`, `/ru`, `/en` | лендинг: `webRoot/site/be.html`, `ru.html`, `en.html` с `PUBLIC_URL` вместо `{{publicUrl}}`, `no-cache` (ROOM-68) |
+| `/robots.txt`, `/sitemap.xml` | только с `webRoot`: краулерам закрыт `/j/`, ссылка на карту; карта — три страницы лендинга под `PUBLIC_URL`, `no-cache` (ROOM-68) |
 | `/j/<roomId>` | веб-гость: `webRoot/index.html`, `no-cache` |
 | `/assets/…` | файл из `webRoot/assets/`, кэш на год |
 | всё остальное | 404 с пустым телом (ROOM-62) |

@@ -58,7 +58,6 @@ export type Timing = {
 };
 
 export type JamServerOptions = HttpOptions & {
-  readonly publicUrl: string;
   readonly trustedProxies: ReadonlySet<string>;
   readonly roomsFile?: string | null;
   readonly now?: () => number;

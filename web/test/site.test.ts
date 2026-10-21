@@ -1,13 +1,15 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parseDownloadClick } from "../../server/src/net/downloads.js";
+import { fillPublicUrl } from "../../server/src/net/site.js";
 import { downloadClick } from "../site/clicks.js";
 import { pickDownloads } from "../site/releases.js";
-import { renderPage, templateKeys } from "../site/render.js";
+import { renderPage, sitePath, templateKeys } from "../site/render.js";
 import { SITE_LANGUAGES, SITE_TEXTS } from "../site/texts.js";
 
 const template = readFileSync(new URL("../site/page.html", import.meta.url), "utf8");
-const own = new Set(["lang", "current:be", "current:ru", "current:en"]);
+const own = new Set(["lang", "path", "publicUrl", "current:be", "current:ru", "current:en"]);
+const PUBLIC_URL = "https://jam.example.org";
 
 function release(tag: string, names: readonly string[], repository = "QiYaa") {
   return {
@@ -31,13 +33,47 @@ describe("landing texts", () => {
     }
   });
 
-  it("renders each language with nothing left to fill and the link to itself marked", () => {
+  it("renders each language with only the server's address left to fill and the link to itself marked", () => {
     for (const language of SITE_LANGUAGES) {
       const page = renderPage(template, language);
-      expect(page).not.toContain("{{");
+      expect(page.replaceAll("{{publicUrl}}", "")).not.toContain("{{");
+      expect(fillPublicUrl(page, PUBLIC_URL)).not.toContain("{{");
       expect(page).toContain(`<html lang="${language}">`);
       expect(page).toContain(`hreflang="${language}" lang="${language}" aria-current="page"`);
       expect(page.match(/aria-current/g)).toHaveLength(1);
+    }
+  });
+
+  it("ROOM-68 the canonical link names the page itself and the alternates name every language", () => {
+    for (const language of SITE_LANGUAGES) {
+      const page = fillPublicUrl(renderPage(template, language), PUBLIC_URL);
+      const own = `${PUBLIC_URL}${sitePath(language)}`;
+      expect(page).toContain(`<link rel="canonical" href="${own}" />`);
+      expect(page).toContain(`<meta property="og:url" content="${own}" />`);
+      const alternates = Array.from(
+        page.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g),
+        (match) => `${match[1] ?? ""} ${match[2] ?? ""}`,
+      );
+      expect(alternates).toEqual([
+        `be ${PUBLIC_URL}/`,
+        `ru ${PUBLIC_URL}/ru`,
+        `en ${PUBLIC_URL}/en`,
+        `x-default ${PUBLIC_URL}/en`,
+      ]);
+    }
+  });
+
+  it("the structured data is JSON that names the page and its description", () => {
+    for (const language of SITE_LANGUAGES) {
+      const page = fillPublicUrl(renderPage(template, language), PUBLIC_URL);
+      const json = /<script type="application\/ld\+json">([^<]*)<\/script>/.exec(page)?.[1] ?? "";
+      expect(JSON.parse(json), language).toMatchObject({
+        "@type": "SoftwareApplication",
+        name: "QiYaa",
+        description: SITE_TEXTS[language].description,
+        url: `${PUBLIC_URL}${sitePath(language)}`,
+        inLanguage: language,
+      });
     }
   });
 

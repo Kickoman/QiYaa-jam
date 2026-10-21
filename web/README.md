@@ -26,7 +26,7 @@
 | `scripts/budget.mjs` | Проверка бюджета: гость и лендинг вместе до 100 КиБ gzip без шрифтов и картинок |
 | `e2e/jam.spec.ts` | Playwright: сервер, имитатор хозяина и браузерные гости |
 | `site/` | Лендинг, см. [ниже](#лендинг-site) |
-| `test/site.test.ts`, `test/clicks.test.ts`, `e2e/site.spec.ts` | Лендинг: тексты всех языков, ссылки на релизы, клики по скачиванию; в браузере — языки, ширины 1440/1024/390, GitHub API, клик до строки лога сервера |
+| `test/site.test.ts`, `test/clicks.test.ts`, `e2e/site.spec.ts` | Лендинг: тексты всех языков, `canonical`, `hreflang` и JSON-LD, ссылки на релизы, клики по скачиванию; в браузере — языки, абсолютные ссылки и `og:image` с адресом сервера, `robots.txt` и `sitemap.xml`, ширины 1440/1024/390, GitHub API, клик до строки лога сервера |
 
 ## Команды
 
@@ -80,14 +80,15 @@ Press Start 2P покрывает кириллицу (`U+0400–045F`, с `і` �
 
 | Файл | Что там |
 |---|---|
-| `site/page.html` | Разметка; тексты — `{{key}}`, `{{lang}}` — код языка, `{{current:xx}}` — `aria-current` у ссылки на саму страницу |
+| `site/page.html` | Разметка; тексты — `{{key}}`, `{{lang}}` — код языка, `{{path}}` — путь страницы, `{{current:xx}}` — `aria-current` у ссылки на саму страницу, `{{publicUrl}}` — адрес сервера в абсолютных ссылках (ниже). В `<head>` — `canonical`, `hreflang` на три языка и `x-default` на `/en`, Open Graph с `og.png`, структурированные данные `SoftwareApplication` (JSON-LD) |
 | `site/texts.ts` | Словари `be`, `ru`, `en` с одинаковыми ключами; в значениях можно HTML (ссылки), кроме тех, что идут в атрибуты |
-| `site/render.ts` | `renderPage(template, language)` — подставляет тексты; неизвестный ключ — ошибка сборки |
-| `site/be.html`, `ru.html`, `en.html` | Входы сборки — заглушки: плагин `qiyaa-landing` в `vite.config.ts` (`transformIndexHtml`, `order: "pre"`) заменяет их шаблоном на своём языке, потом Vite хэширует CSS, JS, шрифты и картинку в `/assets/` |
+| `site/render.ts` | `renderPage(template, language)` — подставляет тексты, `{{publicUrl}}` (`PUBLIC_URL_PLACEHOLDER`) оставляет серверу; неизвестный ключ — ошибка сборки. `sitePath(language)` — `/`, `/ru`, `/en` |
+| `site/be.html`, `ru.html`, `en.html` | Входы сборки — заглушки: плагин `qiyaa-landing` в `vite.config.ts` (`transformIndexHtml`, `order: "pre"`) заменяет их шаблоном на своём языке, потом Vite хэширует CSS, JS, шрифты и картинки в `/assets/`; в сборке `qiyaa-landing-image` (`order: "post"`) ставит `{{publicUrl}}` перед адресом `og.png` в `og:image` |
 | `site/site.css` | Стили; токены и шрифты — из `src/theme.css` |
 | `site/releases.ts` | Кнопки скачивания и номер версии: спрашивает `api.github.com` о последних релизах QiYaa и QiYaa-android и ставит прямые ссылки на файлы (`pickDownloads`). Без ответа за 5 с остаются ссылки на `releases/latest` |
 | `site/clicks.ts` | Клик по кнопке скачивания (TEL-13): `downloadClick` собирает файл, секцию, язык страницы, версию из ссылки, язык браузера и хост сайта, откуда пришли; слушатель `click` и `auxclick` на `document` шлёт его `fetch` с `keepalive` на `POST /api/download`. Ссылку не трогает и ответа не ждёт |
 | `site/player.png` | Скриншот главного окна (413×174) из макета, на странице 550×232, `pixelated` |
+| `site/og.png` | Картинка превью ссылки (`og:image`), 1200×630: `player.png` вдвое, без сглаживания, на фоне страницы `--chrome-950` |
 
 Сервер отдаёт `dist/site/be.html` на `/`, `ru.html` на `/ru`, `en.html` на `/en`. По языку браузера
 не перенаправляем: `/` всегда белорусский, как приложение по умолчанию. В `npm run dev -w web`
@@ -95,8 +96,12 @@ Press Start 2P покрывает кириллицу (`U+0400–045F`, с `і` �
 
 Новый текст — ключ в `page.html` и во всех трёх словарях (`test/site.test.ts` сверяет). Слова — по
 глоссарию приложения ([QiYaa/translations/README.md](https://github.com/Kickoman/QiYaa/blob/master/translations/README.md)):
-Мая хваля / Моя волна / My Vibe, никогда не «wave». Реального домена на странице нет: ссылки
-относительные или на GitHub.
+Мая хваля / Моя волна / My Vibe, никогда не «wave».
+
+Реального домена на странице нет: ссылки относительные или на GitHub. Абсолютные ссылки, без
+которых не обойтись (`canonical`, `hreflang`, `og:url`, `og:image`, `url` в JSON-LD), начинаются с
+`{{publicUrl}}`; сервер, отдавая страницу, ставит туда свой `PUBLIC_URL` (ROOM-68,
+`server/src/net/site.ts`). Он же отдаёт `/robots.txt` и `/sitemap.xml`.
 
 ## Шрифты
 

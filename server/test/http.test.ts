@@ -17,10 +17,14 @@ const webRoot = mkdtempSync(join(tmpdir(), "jam-web-"));
 mkdirSync(join(webRoot, "assets"));
 mkdirSync(join(webRoot, "site"));
 writeFileSync(join(webRoot, "index.html"), "<!doctype html><title>jam</title>");
-for (const language of ["be", "ru", "en"]) {
+for (const [language, path] of [
+  ["be", "/"],
+  ["ru", "/ru"],
+  ["en", "/en"],
+]) {
   writeFileSync(
     join(webRoot, "site", `${language}.html`),
-    `<!doctype html><html lang="${language}">`,
+    `<!doctype html><html lang="${language}"><link rel="canonical" href="{{publicUrl}}${path}">`,
   );
 }
 writeFileSync(join(webRoot, "assets", "app-1a2b.js"), "console.log(1)");
@@ -28,11 +32,16 @@ writeFileSync(join(tmpdir(), "outside-web-root.txt"), "secret");
 
 const assetlinks = '[{"relation":["delegate_permission/common.handle_all_urls"]}]';
 const server = createHttpServer({
+  publicUrl: "https://jam.example.org/",
   assetlinksJson: assetlinks,
   webRoot,
   trustedProxies: new Set(["127.0.0.1"]),
 });
-const bare = createHttpServer({ assetlinksJson: null, webRoot: null });
+const bare = createHttpServer({
+  publicUrl: "https://jam.example.org",
+  assetlinksJson: null,
+  webRoot: null,
+});
 let base = "";
 let bareBase = "";
 
@@ -76,6 +85,30 @@ describe("http", () => {
     const asset = await fetch(`${base}/assets/app-1a2b.js`);
     expect(asset.status).toBe(200);
     expect(asset.headers.get("cache-control")).toContain("immutable");
+  });
+
+  it("ROOM-68 the landing's absolute links start with PUBLIC_URL, and so do robots.txt and sitemap.xml", async () => {
+    const page = await (await fetch(`${base}/ru`)).text();
+    expect(page).toContain('<link rel="canonical" href="https://jam.example.org/ru">');
+    expect(page).not.toContain("{{publicUrl}}");
+    const robots = await fetch(`${base}/robots.txt`);
+    expect(robots.status).toBe(200);
+    expect(robots.headers.get("content-type")).toBe("text/plain; charset=utf-8");
+    expect(await robots.text()).toBe(
+      "User-agent: *\nDisallow: /j/\n\nSitemap: https://jam.example.org/sitemap.xml\n",
+    );
+    const sitemap = await fetch(`${base}/sitemap.xml`);
+    expect(sitemap.status).toBe(200);
+    expect(sitemap.headers.get("content-type")).toBe("application/xml; charset=utf-8");
+    const pages = Array.from(
+      (await sitemap.text()).matchAll(/<loc>([^<]*)<\/loc>/g),
+      (match) => match[1],
+    );
+    expect(pages).toEqual([
+      "https://jam.example.org/",
+      "https://jam.example.org/ru",
+      "https://jam.example.org/en",
+    ]);
   });
 
   it("ROOM-62 answers HEAD like GET, without a body", async () => {
@@ -133,8 +166,16 @@ describe("http", () => {
   });
 
   it("without a web root or assetlinks, only /healthz answers", async () => {
-    for (const path of ["/", "/ru", "/j/7k3m9q2x", "/.well-known/assetlinks.json"]) {
-      expect((await fetch(bareBase + path)).status).toBe(404);
+    const paths = [
+      "/",
+      "/ru",
+      "/j/7k3m9q2x",
+      "/.well-known/assetlinks.json",
+      "/robots.txt",
+      "/sitemap.xml",
+    ];
+    for (const path of paths) {
+      expect((await fetch(bareBase + path)).status, path).toBe(404);
     }
     expect((await fetch(`${bareBase}/healthz`)).status).toBe(200);
   });
@@ -179,6 +220,14 @@ describe("http logs", () => {
       raw_path: "/wp-login.php",
     });
     expect(await requestLog("/j/7k3m9q2x/")).toMatchObject({ http_path: "/*", raw_path: "/j/…" });
+  });
+
+  it("robots.txt and sitemap.xml count under their own routes", async () => {
+    expect(await requestLog("/robots.txt")).toMatchObject({
+      level: "info",
+      http_path: "/robots.txt",
+    });
+    expect(await requestLog("/sitemap.xml")).toMatchObject({ http_path: "/sitemap.xml" });
   });
 
   it("assets and /healthz are logged at debug, which the default level drops", async () => {

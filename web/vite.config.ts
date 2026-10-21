@@ -3,37 +3,59 @@ import { basename, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
-import { isSiteLanguage, renderPage } from "./site/render.js";
+import { isSiteLanguage, PUBLIC_URL_PLACEHOLDER, renderPage } from "./site/render.js";
+import type { SiteLanguage } from "./site/texts.js";
 
 const page = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 const SITE_TEMPLATE = page("site/page.html");
 
+/** The language of a landing entry (site/be.html, ru.html, en.html); null for any other page. */
+function landingLanguage(filename: string): SiteLanguage | null {
+  const language = basename(filename, ".html");
+  return dirname(filename) === dirname(SITE_TEMPLATE) && isSiteLanguage(language) ? language : null;
+}
+
 /**
  * The landing: site/be.html, ru.html and en.html are placeholders that get site/page.html filled
- * with that language's texts, before Vite bundles what the page links to.
+ * with that language's texts, before Vite bundles what the page links to. In a build, og:image
+ * also gets {{publicUrl}} in front of the address Vite writes there, `/assets/og-<hash>.png`: link
+ * previews need an absolute link, and only the server knows its address (ROOM-68).
  */
-function landing(): Plugin {
-  return {
-    name: "qiyaa-landing",
-    transformIndexHtml: {
-      order: "pre",
-      handler(html, context) {
-        const language = basename(context.filename, ".html");
-        if (dirname(context.filename) !== dirname(SITE_TEMPLATE) || !isSiteLanguage(language)) {
-          return html;
-        }
-        return renderPage(readFileSync(SITE_TEMPLATE, "utf8"), language);
+function landing(): Plugin[] {
+  return [
+    {
+      name: "qiyaa-landing",
+      transformIndexHtml: {
+        order: "pre",
+        handler(html, context) {
+          const language = landingLanguage(context.filename);
+          return language === null
+            ? html
+            : renderPage(readFileSync(SITE_TEMPLATE, "utf8"), language);
+        },
+      },
+      configureServer(server) {
+        server.watcher.add(SITE_TEMPLATE);
+        server.watcher.on("change", (path) => {
+          if (path === SITE_TEMPLATE) {
+            server.ws.send({ type: "full-reload" });
+          }
+        });
       },
     },
-    configureServer(server) {
-      server.watcher.add(SITE_TEMPLATE);
-      server.watcher.on("change", (path) => {
-        if (path === SITE_TEMPLATE) {
-          server.ws.send({ type: "full-reload" });
-        }
-      });
+    {
+      name: "qiyaa-landing-image",
+      apply: "build",
+      transformIndexHtml: {
+        order: "post",
+        handler(html, context) {
+          return landingLanguage(context.filename) === null
+            ? html
+            : html.replace('<meta property="og:image" content="', `$&${PUBLIC_URL_PLACEHOLDER}`);
+        },
+      },
     },
-  };
+  ];
 }
 
 export default defineConfig({

@@ -11,6 +11,7 @@ configureLog({
 });
 
 const server = createHttpServer({
+  publicUrl: "https://jam.example.org",
   assetlinksJson: null,
   webRoot: null,
   trustedProxies: new Set(["127.0.0.1"]),

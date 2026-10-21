@@ -40,7 +40,7 @@ grep -rlnE 'from "(ws|node:net|node:http)"' server/src/room/   # должно н
 |---|---|---|
 | `HOST` | `0.0.0.0` | Адрес, на котором слушать |
 | `PORT` | `8090` | Порт; не число от 0 до 65535 — ошибка при запуске |
-| `PUBLIC_URL` | `http://localhost:<PORT>` | Внешний адрес: из него `joinUrl` и единственный разрешённый `Origin` |
+| `PUBLIC_URL` | `http://localhost:<PORT>` | Внешний адрес: из него `joinUrl`, абсолютные ссылки лендинга, `robots.txt` и `sitemap.xml` (ROOM-68) и единственный разрешённый `Origin` |
 | `TRUSTED_PROXY` | `127.0.0.1` | Через запятую: от кого верить `X-Real-IP` |
 | `DATA_DIR` | `/data` | Где `rooms.json` (комнаты на время перезапуска) |
 | `ASSETLINKS_JSON` | нет | Тело `/.well-known/assetlinks.json` для Android App Links; не JSON — ошибка при запуске |

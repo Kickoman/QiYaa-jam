@@ -7,6 +7,8 @@ import type {
 } from "../protocol/generated/types.js";
 import type { Fallback } from "./seeds.js";
 
+export type CatalogSource = "yandex" | "spotify";
+
 export type ParticipantKind = "host" | "web" | "qiyaa";
 
 export type Participant = {
@@ -43,6 +45,7 @@ export type PendingRequest = {
   readonly guest: string;
   readonly id: string;
   readonly track: CatalogTrack | null;
+  readonly source?: CatalogSource;
 };
 
 export type RoomState = {
@@ -61,6 +64,7 @@ export type RoomState = {
   readonly recent: readonly RecentItem[];
   readonly nowPlaying: NowPlaying;
   readonly fallback: Fallback;
+  readonly searchSources?: readonly CatalogSource[];
   readonly searchCache: ReadonlyMap<string, readonly CachedTrack[]>;
   readonly pending: readonly PendingRequest[];
   readonly hostLeftAt: number | null;
@@ -96,6 +100,7 @@ export type RoomEvent =
       readonly hostSecret: string;
       readonly outbox: readonly { readonly itemId: string }[];
       readonly restored: boolean;
+      readonly searchSources?: readonly CatalogSource[];
     }
   | { readonly kind: "timeout"; readonly requestId: string }
   | { readonly kind: "tick" };

@@ -103,7 +103,7 @@ export class JamConnection {
       socket.send(
         JSON.stringify({
           type: "hello",
-          protocol: 1,
+          protocol: 2,
           app: "web",
           appVersion: this.options.appVersion,
         }),

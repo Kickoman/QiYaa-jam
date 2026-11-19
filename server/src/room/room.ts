@@ -27,6 +27,7 @@ import { hashSecret } from "./secrets.js";
 import { nextFallback, type SeedCandidate } from "./seeds.js";
 import { isCatalogTrack } from "./tracks.js";
 import type {
+  CatalogSource,
   Effect,
   Fresh,
   Item,
@@ -61,6 +62,7 @@ export type CreateRoom = {
   readonly hostSecret: string;
   readonly joinSecret: string;
   readonly settings?: SettingsPatch;
+  readonly searchSources?: readonly CatalogSource[];
 };
 
 export function createRoom(create: CreateRoom, context: RoomContext): Outcome {
@@ -90,6 +92,7 @@ export function createRoom(create: CreateRoom, context: RoomContext): Outcome {
     recent: [],
     nowPlaying: { source: "idle", positionMs: 0, paused: true, reportedAt: context.now },
     fallback: { seeds: [], seedsVersion: 0 },
+    ...(create.searchSources === undefined ? {} : { searchSources: create.searchSources }),
     searchCache: new Map(),
     pending: [],
     hostLeftAt: null,
@@ -123,13 +126,22 @@ export function isPublicIdFree(room: RoomState, publicId: string): boolean {
   return !room.participants.some((participant) => participant.publicId === publicId);
 }
 
-function seedCandidates(room: RoomState): SeedCandidate[] {
+export function seedCandidates(room: RoomState): SeedCandidate[] {
   const candidates: SeedCandidate[] = [
-    ...room.queue.map((item) => ({ itemId: item.itemId, trackId: item.track.id })),
-    ...room.recent.map((item) => ({ itemId: item.itemId, trackId: item.track.id })),
+    ...room.queue
+      .filter((item) => item.track.source !== "spotify")
+      .map((item) => ({ itemId: item.itemId, trackId: item.track.id })),
+    ...room.recent
+      .filter((item) => item.track.source !== "spotify")
+      .map((item) => ({ itemId: item.itemId, trackId: item.track.id })),
   ];
   const current = room.nowPlaying;
-  if (current.source === "item" && current.itemId !== undefined && current.track) {
+  if (
+    current.source === "item" &&
+    current.itemId !== undefined &&
+    current.track &&
+    current.track.source !== "spotify"
+  ) {
     candidates.push({ itemId: current.itemId, trackId: current.track.id });
   }
   return candidates;
@@ -181,8 +193,17 @@ function waitingOf(room: RoomState, publicId: string): number {
   return room.queue.filter((item) => item.addedBy === publicId).length;
 }
 
-function addRefusal(room: RoomState, adder: Participant, trackId: string): Reason | null {
-  if (room.queue.some((item) => item.track.id === trackId)) {
+function addRefusal(
+  room: RoomState,
+  adder: Participant,
+  trackId: string,
+  source: CatalogSource = "yandex",
+): Reason | null {
+  if (
+    room.queue.some(
+      (item) => item.track.id === trackId && (item.track.source ?? "yandex") === source,
+    )
+  ) {
     return "duplicate";
   }
   if (room.queue.length >= QUEUE_LENGTH) {
@@ -205,7 +226,7 @@ function addItem(
   id: string,
   now: number,
 ): Outcome {
-  const refusal = addRefusal(room, adder, track.id);
+  const refusal = addRefusal(room, adder, track.id, track.source);
   if (refusal) {
     return refuse(room, connection, id, refusal);
   }
@@ -286,7 +307,11 @@ function onPlaying(room: RoomState, message: PlayingMessage, now: number): Outco
     }
     return changed(room, {
       ...base,
-      nowPlaying: { ...withoutListenUrls(base.nowPlaying), ...report, ...listen },
+      nowPlaying: {
+        ...withoutListenUrls(base.nowPlaying),
+        ...report,
+        ...(base.nowPlaying.track?.source === "spotify" ? {} : listen),
+      },
     });
   }
   const nowPlaying: NowPlaying =
@@ -300,11 +325,16 @@ function cachedTrack(
   room: RoomState,
   guest: string,
   trackId: string,
+  source: CatalogSource,
   now: number,
 ): CatalogTrack | null {
   const entries = room.searchCache.get(guest) ?? [];
   const fresh = entries.filter((entry) => entry.at > now - SEARCH_CACHE_MS);
-  return fresh.findLast((entry) => entry.track.id === trackId)?.track ?? null;
+  return (
+    fresh.findLast(
+      (entry) => entry.track.id === trackId && (entry.track.source ?? "yandex") === source,
+    )?.track ?? null
+  );
 }
 
 function onAdd(
@@ -320,7 +350,11 @@ function onAdd(
     if (trackId === undefined) {
       return refuse(room, connection, id, "not-allowed");
     }
-    const cached = cachedTrack(room, sender.publicId, trackId, now);
+    const source = message.source ?? "yandex";
+    if (!(room.searchSources ?? ["yandex"]).includes(source)) {
+      return refuse(room, connection, id, "not-allowed");
+    }
+    const cached = cachedTrack(room, sender.publicId, trackId, source, now);
     if (!cached) {
       return refuse(room, connection, id, "unknown-track");
     }
@@ -334,6 +368,9 @@ function onAdd(
   }
   if (sender.kind === "host") {
     return addItem(room, sender, track, connection, id, now);
+  }
+  if (track.source === "spotify" || !(room.searchSources ?? ["yandex"]).includes("yandex")) {
+    return refuse(room, connection, id, "not-allowed");
   }
   const refusal = addRefusal(room, sender, track.id);
   if (refusal) {
@@ -379,7 +416,12 @@ function onSearchResult(room: RoomState, message: SearchResultMessage, now: numb
     return unchanged(room);
   }
   const [rest, request] = taken;
-  if (!message.tracks) {
+  const source = request.source ?? "yandex";
+  if (
+    !message.tracks ||
+    !(room.searchSources ?? ["yandex"]).includes(source) ||
+    message.tracks.some((track) => (track.source ?? "yandex") !== source)
+  ) {
     return unchanged(rest, [send(request.connection, rejected(request.id, "host-error"))]);
   }
   const cache = new Map(rest.searchCache);
@@ -406,7 +448,7 @@ function onValidateResult(room: RoomState, message: ValidateResultMessage, now: 
   if (!guest) {
     return unchanged(rest);
   }
-  if (result.track) {
+  if (result.track && result.track.source !== "spotify") {
     return addItem(rest, guest, result.track, request.connection, request.id, now);
   }
   const reason: Reason = result.reason === "track-unavailable" ? "track-unavailable" : "host-error";
@@ -517,10 +559,30 @@ function onMessage(
         return refuseRole(message.id);
       }
       const settings: Settings = { ...room.settings, ...message.settings };
-      if (sameSettings(settings, room.settings)) {
+      if (sameSettings(settings, room.settings) && message.searchSources === undefined) {
         return unchanged(room, [ack(connection, message.id)]);
       }
-      return changed(room, { ...room, settings }, [ack(connection, message.id)]);
+      return changed(
+        room,
+        {
+          ...room,
+          settings,
+          ...(message.searchSources === undefined
+            ? {}
+            : {
+                searchSources: message.searchSources,
+                searchCache: new Map(
+                  [...room.searchCache].map(([guest, entries]) => [
+                    guest,
+                    entries.filter(({ track }) =>
+                      message.searchSources?.includes(track.source ?? "yandex"),
+                    ),
+                  ]),
+                ),
+              }),
+        },
+        [ack(connection, message.id)],
+      );
     }
     case "rotateLink": {
       if (!host) {
@@ -555,8 +617,13 @@ function onMessage(
       if (!isHostOnline(room)) {
         return refuse(room, connection, message.id, "host-offline");
       }
+      const source = message.source ?? "yandex";
+      if (!(room.searchSources ?? ["yandex"]).includes(source)) {
+        return refuse(room, connection, message.id, "not-allowed");
+      }
       const request: PendingRequest = {
         kind: "search",
+        source,
         requestId: fresh.requestId,
         connection,
         guest: sender.publicId,
@@ -567,6 +634,7 @@ function onMessage(
         type: "searchRequest",
         requestId: fresh.requestId,
         text: normalizedSearch(message.text),
+        ...(message.source === undefined ? {} : { source }),
       };
       return unchanged({ ...room, pending: [...room.pending, request] }, [
         { kind: "to-host", message: searchRequest },
@@ -663,6 +731,7 @@ function onResume(
       connections: host.connections + 1,
     })),
     hostLeftAt: null,
+    ...(event.searchSources === undefined ? {} : { searchSources: event.searchSources }),
   };
   for (const started of event.outbox) {
     after = startItem(after, started.itemId, context.now) ?? after;

@@ -1,6 +1,7 @@
 import type { NowPlaying, SnapshotData } from "../protocol/generated/types.js";
 import { ROOM_MAX_AGE_MS } from "./limits.js";
 import { itemNumber } from "./ordering.js";
+import { seedCandidates } from "./room.js";
 import { nextFallback } from "./seeds.js";
 import { isCatalogTrack } from "./tracks.js";
 import type { RoomState } from "./types.js";
@@ -18,6 +19,7 @@ export function toSnapshot(room: RoomState): SnapshotData {
       version: room.version,
       nextItemNumber: room.nextItemNumber,
       settings: room.settings,
+      ...(room.searchSources === undefined ? {} : { searchSources: [...room.searchSources] }),
       participants: room.participants.map((participant) => ({
         publicId: participant.publicId,
         idHash: participant.idHash,
@@ -95,6 +97,7 @@ export function fromSnapshot(data: SnapshotData, now: number): RoomState {
     version: snapshot.version,
     nextItemNumber: snapshot.nextItemNumber,
     settings: snapshot.settings,
+    ...(snapshot.searchSources === undefined ? {} : { searchSources: snapshot.searchSources }),
     participants: snapshot.participants.map((participant) => ({ ...participant, connections: 0 })),
     kicked: [...snapshot.kicked],
     queue: snapshot.queue.map((item) => ({ ...item })),
@@ -105,12 +108,6 @@ export function fromSnapshot(data: SnapshotData, now: number): RoomState {
     pending: [],
     hostLeftAt: now,
   };
-  const candidates = [
-    ...room.queue.map((item) => ({ itemId: item.itemId, trackId: item.track.id })),
-    ...room.recent.map((item) => ({ itemId: item.itemId, trackId: item.track.id })),
-    ...(room.nowPlaying.itemId !== undefined && room.nowPlaying.track
-      ? [{ itemId: room.nowPlaying.itemId, trackId: room.nowPlaying.track.id }]
-      : []),
-  ];
+  const candidates = seedCandidates(room);
   return { ...room, fallback: nextFallback(room.fallback, candidates) };
 }

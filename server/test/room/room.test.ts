@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { isServerMessage } from "../../src/protocol/validate.js";
 import { GUESTS_PER_ROOM, QUEUE_LENGTH, SEARCH_CACHE_MS } from "../../src/room/limits.js";
+import { fromSnapshot, toSnapshot } from "../../src/room/snapshot.js";
 import { stateFor } from "../../src/room/view.js";
 import {
   HOST,
@@ -350,6 +351,38 @@ describe("add", () => {
 });
 
 describe("search", () => {
+  it("adds Spotify from the guest's cache, keeps it out of Yandex seeds and projects legacy state", () => {
+    const jam = new RoomHarness();
+    const guest = jam.guest("Guest");
+    const spotify = { ...track("0123456789abcdefghijkl"), source: "spotify" as const };
+    delete spotify.albumId;
+    delete spotify.coverUri;
+    jam.send(HOST, { type: "settings", id: "h1", searchSources: ["yandex", "spotify"] });
+    const [request] = toHost(
+      jam.send(guest, { type: "search", id: "g1", text: "example", source: "spotify" }),
+    );
+    expect(request).toMatchObject({ type: "searchRequest", source: "spotify" });
+    if (request?.type !== "searchRequest") {
+      throw new Error("Expected a search request");
+    }
+    jam.send(HOST, { type: "searchResult", requestId: request.requestId, tracks: [spotify] });
+    expect(reasonOf(jam.send(guest, { type: "add", id: "g2", trackId: spotify.id }))).toBe(
+      "unknown-track",
+    );
+    jam.send(guest, { type: "add", id: "g3", trackId: spotify.id, source: "spotify" });
+    expect(jam.room.queue[0]?.track).toEqual(spotify);
+    expect(jam.room.fallback.seeds).toEqual([]);
+    jam.send(HOST, { type: "started", itemId: "i1" });
+    const legacy = stateFor(jam.room, guest, 0, 1);
+    expect(legacy.room.nowPlaying).toMatchObject({ source: "wave", track: { source: "host" } });
+    expect(isServerMessage(legacy)).toBe(true);
+    expect(stateFor(jam.room, guest, 0, 2).room.nowPlaying.track?.source).toBe("spotify");
+    const restored = fromSnapshot(toSnapshot(jam.room), 0);
+    expect(restored.nowPlaying.track).toEqual(spotify);
+    expect(restored.searchSources).toEqual(["yandex", "spotify"]);
+    expect(restored.fallback.seeds).toEqual([]);
+  });
+
   it("ROOM-24 a web guest's search goes to the host normalized, and the results come back to that guest", () => {
     const jam = new RoomHarness();
     const anya = jam.guest("Аня");

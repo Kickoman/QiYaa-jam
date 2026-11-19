@@ -44,7 +44,7 @@ import { RateLimiter, Violations } from "./rate-limit.js";
 import { clientIp } from "./real-ip.js";
 import { newTally, roomChanges, roomSummary, type Tally } from "./room-log.js";
 
-export const PROTOCOL = 1;
+export const PROTOCOL = 2;
 
 /** How often the server logs `jam_stats`, the gauges the dashboard shows as "now". */
 const STATS_INTERVAL_MS = 60_000;
@@ -71,6 +71,7 @@ class Connection {
   roomId: string | null = null;
   publicId: string | null = null;
   host = false;
+  protocol = 1;
   replaced = false;
   handshake: NodeJS.Timeout | undefined;
 
@@ -97,6 +98,14 @@ class Connection {
       this.socket.send(JSON.stringify(message));
     }
   }
+}
+
+function hasSpotify(room: RoomState): boolean {
+  return (
+    room.nowPlaying.track?.source === "spotify" ||
+    room.queue.some(({ track }) => track.source === "spotify") ||
+    room.recent.some(({ track }) => track.source === "spotify")
+  );
 }
 
 function frameText(data: RawData): Buffer {
@@ -367,22 +376,36 @@ export class JamServer {
       return;
     }
     clearTimeout(connection.handshake);
-    if (message.protocol !== PROTOCOL) {
+    if (message.protocol !== 1 && message.protocol !== PROTOCOL) {
       connection.send({ type: "rejected", reason: "update-required", serverProtocol: PROTOCOL });
       connection.socket.close(1000);
       return;
     }
     connection.app = message.app;
+    connection.protocol = message.protocol;
     log.info("ws_hello", {
       connection: connection.id,
       app: message.app,
       app_version: message.appVersion,
+      protocol: connection.protocol,
     });
-    connection.send({ type: "welcome", protocol: PROTOCOL, serverTime: this.now() });
+    connection.send({ type: "welcome", protocol: connection.protocol, serverTime: this.now() });
   }
 
   private handle(connection: Connection, message: ClientMessage): void {
     if (connection.replaced) {
+      return;
+    }
+    if (
+      connection.protocol === 1 &&
+      ((message.type === "search" && message.source === "spotify") ||
+        (message.type === "add" &&
+          (message.source === "spotify" || message.track?.source === "spotify")) ||
+        (message.type === "searchResult" &&
+          message.tracks?.some(({ source }) => source === "spotify")) ||
+        (message.type === "settings" && message.searchSources !== undefined))
+    ) {
+      this.reject(connection, requestIdOf(message), "not-allowed");
       return;
     }
     const { roomId, publicId } = connection;
@@ -456,6 +479,9 @@ export class JamServer {
         hostSecret: ids.hostSecret(),
         joinSecret: ids.joinSecret(),
         ...(message.settings ? { settings: message.settings } : {}),
+        ...(connection.protocol === 2 && message.searchSources !== undefined
+          ? { searchSources: message.searchSources }
+          : {}),
       },
       this.context(),
     );
@@ -487,8 +513,21 @@ export class JamServer {
       id: message.id,
       hostSecret: message.hostSecret,
       outbox: message.outbox,
+      searchSources:
+        connection.protocol === 2
+          ? (message.searchSources ?? (["yandex"] as const))
+          : (["yandex"] as const),
     } as const;
-    if (this.rooms.has(message.roomId)) {
+    const existing = this.rooms.get(message.roomId);
+    if (existing) {
+      if (
+        connection.protocol === 1 &&
+        hashSecret(message.hostSecret) === existing.hostSecretHash &&
+        hasSpotify(existing)
+      ) {
+        this.reject(connection, message.id, "update-required");
+        return;
+      }
       this.dispatch(message.roomId, { ...event, restored: false });
       return;
     }
@@ -513,7 +552,12 @@ export class JamServer {
     if (!this.roomAllowed(connection, message.id)) {
       return;
     }
-    this.rooms.set(message.roomId, fromSnapshot(snapshot, this.now()));
+    const restored = fromSnapshot(snapshot, this.now());
+    if (connection.protocol === 1 && hasSpotify(restored)) {
+      this.reject(connection, message.id, "update-required");
+      return;
+    }
+    this.rooms.set(message.roomId, restored);
     this.countRoom(message.roomId, connection.ip);
     this.tallies.set(message.roomId, newTally(this.now(), true));
     log.info("room_restored", { rooms: this.rooms.size, app: connection.app ?? "none" });
@@ -631,7 +675,7 @@ export class JamServer {
           const now = this.now();
           for (const connection of this.inRoom(roomId)) {
             if (room && connection.publicId !== null) {
-              connection.send(stateFor(room, connection.publicId, now));
+              connection.send(stateFor(room, connection.publicId, now, connection.protocol));
             }
           }
           this.snapshotSoon(roomId);

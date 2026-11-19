@@ -1,6 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import type { Room } from "../../../server/src/protocol/generated/types.js";
-import { coverUrl, formatTime, positionAt } from "../format.js";
+import { coverUrl, formatTime, positionAt, spotifyUrl } from "../format.js";
 import { Icon, Lamp, Window } from "./chrome.js";
 import type { Translate } from "./translate.js";
 
@@ -45,7 +45,18 @@ export function NowPlaying({ t, room, names, serverNow, onSkip, listening, onLis
           {cover ? <img class="cover" src={cover} alt="" /> : <div class="cover" />}
         </div>
         <div class="now-text">
-          <p class="track-title">{track.title}</p>
+          {track.source === "spotify" ? (
+            <a
+              class="track-title"
+              href={spotifyUrl(track)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {track.title}
+            </a>
+          ) : (
+            <p class="track-title">{track.title}</p>
+          )}
           <p class="track-artists">{track.artists.join(", ")}</p>
           {playing.source === "item" ? (
             <p class="who">{t("addedBy", { name: names.get(playing.addedBy ?? "") ?? "?" })}</p>

@@ -370,6 +370,11 @@ export class JamServer {
     }
   }
 
+  private requireUpdate(connection: Connection): void {
+    connection.send({ type: "rejected", reason: "update-required", serverProtocol: PROTOCOL });
+    connection.socket.close(1000);
+  }
+
   private hello(connection: Connection, message: ClientMessage): void {
     if (message.type !== "hello") {
       this.violate(connection, 1008, "no-hello");
@@ -377,8 +382,7 @@ export class JamServer {
     }
     clearTimeout(connection.handshake);
     if (message.protocol !== 1 && message.protocol !== PROTOCOL) {
-      connection.send({ type: "rejected", reason: "update-required", serverProtocol: PROTOCOL });
-      connection.socket.close(1000);
+      this.requireUpdate(connection);
       return;
     }
     connection.app = message.app;
@@ -525,7 +529,7 @@ export class JamServer {
         hashSecret(message.hostSecret) === existing.hostSecretHash &&
         hasSpotify(existing)
       ) {
-        this.reject(connection, message.id, "update-required");
+        this.requireUpdate(connection);
         return;
       }
       this.dispatch(message.roomId, { ...event, restored: false });
@@ -549,12 +553,12 @@ export class JamServer {
       this.reject(connection, message.id, "bad-secret");
       return;
     }
-    if (!this.roomAllowed(connection, message.id)) {
-      return;
-    }
     const restored = fromSnapshot(snapshot, this.now());
     if (connection.protocol === 1 && hasSpotify(restored)) {
-      this.reject(connection, message.id, "update-required");
+      this.requireUpdate(connection);
+      return;
+    }
+    if (!this.roomAllowed(connection, message.id)) {
       return;
     }
     this.rooms.set(message.roomId, restored);

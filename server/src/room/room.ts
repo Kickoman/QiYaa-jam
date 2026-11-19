@@ -448,7 +448,7 @@ function onValidateResult(room: RoomState, message: ValidateResultMessage, now: 
   if (!guest) {
     return unchanged(rest);
   }
-  if (result.track && result.track.source !== "spotify") {
+  if (result.track) {
     return addItem(rest, guest, result.track, request.connection, request.id, now);
   }
   const reason: Reason = result.reason === "track-unavailable" ? "track-unavailable" : "host-error";
@@ -562,27 +562,8 @@ function onMessage(
       if (sameSettings(settings, room.settings) && message.searchSources === undefined) {
         return unchanged(room, [ack(connection, message.id)]);
       }
-      return changed(
-        room,
-        {
-          ...room,
-          settings,
-          ...(message.searchSources === undefined
-            ? {}
-            : {
-                searchSources: message.searchSources,
-                searchCache: new Map(
-                  [...room.searchCache].map(([guest, entries]) => [
-                    guest,
-                    entries.filter(({ track }) =>
-                      message.searchSources?.includes(track.source ?? "yandex"),
-                    ),
-                  ]),
-                ),
-              }),
-        },
-        [ack(connection, message.id)],
-      );
+      const [updated, effects] = withSearchSources(room, message.searchSources);
+      return changed(room, { ...updated, settings }, [ack(connection, message.id), ...effects]);
     }
     case "rotateLink": {
       if (!host) {
@@ -717,6 +698,31 @@ function onJoin(
   });
 }
 
+function withSearchSources(
+  room: RoomState,
+  searchSources: readonly CatalogSource[] | undefined,
+): [RoomState, Effect[]] {
+  if (searchSources === undefined) {
+    return [room, []];
+  }
+  const searchCache = new Map(
+    [...room.searchCache].map(([guest, entries]) => [
+      guest,
+      entries.filter(({ track }) => searchSources.includes(track.source ?? "yandex")),
+    ]),
+  );
+  const pending: PendingRequest[] = [];
+  const effects: Effect[] = [];
+  for (const request of room.pending) {
+    if (searchSources.includes(request.source ?? "yandex")) {
+      pending.push(request);
+    } else {
+      effects.push(send(request.connection, rejected(request.id, "not-allowed")));
+    }
+  }
+  return [{ ...room, searchSources, searchCache, pending }, effects];
+}
+
 function onResume(
   room: RoomState,
   event: Extract<RoomEvent, { kind: "resume" }>,
@@ -725,13 +731,13 @@ function onResume(
   if (hashSecret(event.hostSecret) !== room.hostSecretHash) {
     return refuse(room, event.connection, event.id, "bad-secret");
   }
+  const [updated, effects] = withSearchSources(room, event.searchSources);
   let after: RoomState = {
-    ...withParticipant(room, room.hostPublicId, (host) => ({
+    ...withParticipant(updated, room.hostPublicId, (host) => ({
       ...host,
       connections: host.connections + 1,
     })),
     hostLeftAt: null,
-    ...(event.searchSources === undefined ? {} : { searchSources: event.searchSources }),
   };
   for (const started of event.outbox) {
     after = startItem(after, started.itemId, context.now) ?? after;
@@ -739,6 +745,7 @@ function onResume(
   return changed(room, after, [
     { kind: "admit", connection: event.connection, publicId: room.hostPublicId },
     send(event.connection, { type: "resumed", id: event.id, restored: event.restored }),
+    ...effects,
   ]);
 }
 

@@ -351,6 +351,78 @@ describe("add", () => {
 });
 
 describe("search", () => {
+  it("ROOM-14 ROOM-24 forgets cached and pending results when a resume drops their catalog", () => {
+    const jam = new RoomHarness();
+    const guest = jam.guest("Guest");
+    const spotify = {
+      source: "spotify" as const,
+      id: "0123456789abcdefghijkl",
+      title: "Spotify track",
+      artists: ["Artist"],
+      durationMs: 200_000,
+    };
+    jam.send(HOST, { type: "settings", id: "h2", searchSources: ["yandex", "spotify"] });
+    jam.cacheResults(guest, [track("100")]);
+    const [first] = toHost(
+      jam.send(guest, { type: "search", id: "g1", source: "spotify", text: "first" }),
+    );
+    const [pending] = toHost(
+      jam.send(guest, { type: "search", id: "g2", source: "spotify", text: "second" }),
+    );
+    if (first?.type !== "searchRequest" || pending?.type !== "searchRequest") {
+      throw new Error("Expected search requests");
+    }
+    jam.send(HOST, { type: "searchResult", requestId: first.requestId, tracks: [spotify] });
+    const resumed = jam.apply({
+      kind: "resume",
+      connection: "c-new-host",
+      id: "h3",
+      hostSecret: HOST_SECRET,
+      outbox: [],
+      restored: false,
+      searchSources: ["yandex"],
+    });
+    expect(sent(resumed, `c-${guest}`)).toEqual([
+      { type: "rejected", id: "g2", reason: "not-allowed" },
+    ]);
+    jam.send(HOST, { type: "settings", id: "h4", searchSources: ["yandex", "spotify"] });
+    const late = jam.send(HOST, {
+      type: "searchResult",
+      requestId: pending.requestId,
+      tracks: [spotify],
+    });
+    expect(late).toEqual([]);
+    expect(
+      reasonOf(jam.send(guest, { type: "add", id: "g3", source: "spotify", trackId: spotify.id })),
+    ).toBe("unknown-track");
+    expect(jam.send(guest, { type: "add", id: "g4", trackId: "100" })).toContainEqual({
+      kind: "send",
+      connection: `c-${guest}`,
+      message: { type: "ack", id: "g4" },
+    });
+  });
+
+  it("ROOM-16 a validation in flight is refused when settings disable Yandex", () => {
+    const jam = new RoomHarness();
+    const guest = jam.guest("Guest", "qiyaa");
+    const [pending] = toHost(jam.send(guest, { type: "add", id: "g1", track: track("555") }));
+    if (pending?.type !== "validateRequest") {
+      throw new Error("Expected a validation request");
+    }
+    const disabled = jam.send(HOST, { type: "settings", id: "h2", searchSources: [] });
+    expect(sent(disabled, `c-${guest}`)).toEqual([
+      { type: "rejected", id: "g1", reason: "not-allowed" },
+    ]);
+    jam.send(HOST, { type: "settings", id: "h3", searchSources: ["yandex"] });
+    const late = jam.send(HOST, {
+      type: "validateResult",
+      requestId: pending.requestId,
+      results: [{ trackId: "555", track: track("555") }],
+    });
+    expect(late).toEqual([]);
+    expect(jam.room.queue).toEqual([]);
+  });
+
   it("adds Spotify from the guest's cache, keeps it out of Yandex seeds and projects legacy state", () => {
     const jam = new RoomHarness();
     const guest = jam.guest("Guest");

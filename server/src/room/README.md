@@ -13,7 +13,7 @@
 | `ordering.ts` | `orderQueue` — порядок очереди по `spec/jam/ordering` |
 | `seeds.ts` | `pickSeeds`, `nextFallback` — сиды волны по `spec/jam/seeds.md` |
 | `snapshot.ts` | `toSnapshot`, `fromSnapshot`, `snapshotProblem` — снимок комнаты по `recovery.md` |
-| `tracks.ts` | `isCatalogTrack` — трек каталога Яндекса или трек, который может играть только хозяин |
+| `tracks.ts` | `isCatalogTrack` — трек каталога Яндекса или Spotify |
 | `view.ts` | `stateFor`, `roomFor`, `orderedQueue` — `state` для одного участника |
 | `limits.ts` | Все числа из `spec/jam/limits.md` |
 | `secrets.ts` | `hashSecret` — SHA-256 в hex |
@@ -85,9 +85,11 @@ type Outcome = { room: RoomState | null; effects: readonly Effect[] };   // room
   когда он **начал** играть.
 - Кэш результатов поиска (`searchCache`) и запросы к хозяину (`pending`) в снимок не попадают:
   после восстановления гость ищет заново.
+- Когда `settings` или `resume` отключает каталог, результаты из него удаляются из кэша, а
+  ожидающие ответы на поиск или проверку трека в этом каталоге получают `not-allowed`.
 - Когда хозяин уходит, все запросы к нему сразу получают `host-offline`, не дожидаясь тайм-аута.
-- `CatalogTrack` в схемах — это `Track & {source?: "yandex"}`. Сузить `Track` до него можно только
-  предикатом `isCatalogTrack`: стиль запрещает `as`.
+- `CatalogTrack` в схемах включает треки Яндекса и Spotify. Сузить `Track` до него можно
+  предикатом `isCatalogTrack`.
 - Лимиты частоты (`add`, `search`) проверяет `net`, а не комната.
 - `resume` проверяет только секрет хозяина. Можно ли поднять комнату из снимка (снимок, секрет,
   лимиты на комнаты), решает `net` до события.

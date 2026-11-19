@@ -36,10 +36,32 @@ export function roomFor(room: RoomState, publicId: string): Room {
     nowPlaying: room.nowPlaying,
     queue: orderedQueue(room),
     recent: [...room.recent],
+    searchSources: [...(room.searchSources ?? ["yandex"])],
     fallback: { seeds: [...room.fallback.seeds], seedsVersion: room.fallback.seedsVersion },
   };
 }
 
-export function stateFor(room: RoomState, publicId: string, now: number): StateMessage {
-  return { type: "state", version: room.version, serverTime: now, room: roomFor(room, publicId) };
+export function stateFor(
+  room: RoomState,
+  publicId: string,
+  now: number,
+  protocol = 2,
+): StateMessage {
+  const view = roomFor(room, publicId);
+  if (protocol === 1) {
+    delete view.searchSources;
+    view.queue = view.queue.filter(({ track }) => track.source !== "spotify");
+    view.recent = view.recent.filter(({ track }) => track.source !== "spotify");
+    const { track, positionMs, paused, reportedAt } = view.nowPlaying;
+    if (track?.source === "spotify") {
+      view.nowPlaying = {
+        source: "wave",
+        positionMs,
+        paused,
+        reportedAt,
+        track: { ...track, source: "host" },
+      };
+    }
+  }
+  return { type: "state", version: room.version, serverTime: now, room: view };
 }

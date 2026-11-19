@@ -257,7 +257,10 @@ export class FakeHost {
         break;
       case "validateRequest": {
         const results = message.trackIds.map((trackId) => {
-          const track = this.options.catalog.find((candidate) => candidate.id === trackId);
+          const track = this.options.catalog.find(
+            (candidate): candidate is CatalogTrack & { source?: "yandex" } =>
+              candidate.id === trackId && candidate.source !== "spotify",
+          );
           return track ? { trackId, track } : { trackId, reason: "track-unavailable" as const };
         });
         const [first, ...rest] = results;

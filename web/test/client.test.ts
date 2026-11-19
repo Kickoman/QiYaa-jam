@@ -73,7 +73,7 @@ describe("JamConnection", () => {
     jam.last().open();
     expect(JSON.parse(jam.last().sent[0] ?? "{}")).toEqual({
       type: "hello",
-      protocol: 1,
+      protocol: 2,
       app: "web",
       appVersion: "test",
     });

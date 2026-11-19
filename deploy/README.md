@@ -128,3 +128,23 @@ ssh <vps> 'cd qiyaa-jam-echo && docker compose up -d --build'
 Страница `https://jam.<домен>/` показывает состояние соединения, сколько оно живёт, какой IP видит
 сервер и сколько было переподключений. Кнопка «Не гасить экран» держит экран телефона включённым
 во время долгой проверки. Удаление: `docker compose down` в той же папке.
+
+## Jam protocol 2 rollout
+
+Deploy the server first, then the web and host clients. The server accepts Jam protocols
+1 and 2. Keep protocol 1 enabled for existing hosts and Android guests. Spotify appears
+in a room when its host advertises it. Keep the server version that supports both protocols
+when rolling back a client so rooms containing Spotify tracks can still be recovered.
+
+Import [Jam client versions](grafana/jam-client-versions.json) if the deployment
+does not already chart these fields. The `ws_hello` event carries `app`, `app_version` and `protocol`. For a Grafana Loki data
+source with the service label, use this query in a time series panel to track Jam connections.
+
+```logql
+sum by (app, app_version, protocol) (
+  count_over_time({service="qiyaa-jam"} | json | event="ws_hello" [$__interval])
+)
+```
+
+This counts connections, including reconnects. If the collector labels the service
+differently, use its service selector and keep the parsed fields as dimensions.

@@ -51,7 +51,9 @@ type JamServerOptions = HttpOptions & {   // origin из publicUrl — един�
    `resume` (не из браузера): живая комната получает событие `resume` сразу. Незнакомая поднимается
    из снимка, если он есть, про эту комнату, проходит `snapshotProblem`, SHA-256 секрета совпадает и
    лимиты на новую комнату пропускают; иначе `room-not-found`, `bad-secret`, `server-full` или
-   `rate-limited` (REC-06…09).
+   `rate-limited` (REC-06…09). Если секрет верен, но в комнате или в пригодном снимке есть треки
+   Spotify, хост протокола 1 получает `rejected{update-required, serverProtocol}` без ID и закрытие
+   с 1000.
 4. **С ролью:** у гостя сначала лимиты `add` и `search` на участника, затем событие в комнату.
    Каждое сообщение получает свежие `requestId` и `joinSecret` для редьюсера.
 

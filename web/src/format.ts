@@ -1,3 +1,4 @@
+import type { Track } from "../../server/src/protocol/generated/types.js";
 import type { NowPlaying } from "../../server/src/protocol/generated/types.js";
 
 export function coverUrl(coverUri: string | undefined, size: 100 | 200 | 400): string | null {
@@ -15,4 +16,10 @@ export function positionAt(nowPlaying: NowPlaying, serverNow: number): number {
   const position = nowPlaying.positionMs + elapsed;
   const duration = nowPlaying.track?.durationMs;
   return duration === undefined ? position : Math.min(position, duration);
+}
+
+export function spotifyUrl(track: Track): string | undefined {
+  return track.source === "spotify"
+    ? `https://open.spotify.com/track/${encodeURIComponent(track.id)}`
+    : undefined;
 }

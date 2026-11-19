@@ -1,0 +1,48 @@
+{
+  "title": "Jam client versions",
+  "uid": "qiyaa-jam-client-versions",
+  "schemaVersion": 39,
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "LOKI",
+        "label": "Loki",
+        "type": "datasource",
+        "query": "loki"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Jam connections by client version and protocol",
+      "description": "Counts successful handshakes, including reconnects.",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "${LOKI}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${LOKI}"
+          },
+          "expr": "sum by (app, app_version, protocol) (count_over_time({service=\"qiyaa-jam\"} | json | event=\"ws_hello\" [$__interval]))",
+          "legendFormat": "{{app}} {{app_version}} · v{{protocol}}"
+        }
+      ]
+    }
+  ]
+}

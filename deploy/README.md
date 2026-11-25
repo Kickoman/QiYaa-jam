@@ -142,9 +142,39 @@ source with the service label, use this query in a time series panel to track Ja
 
 ```logql
 sum by (app, app_version, protocol) (
-  count_over_time({service="qiyaa-jam"} | json | event="ws_hello" [$__interval])
+  count_over_time({service="qiyaa-jam"} | json | event="ws_hello" | app_version !~ ".*-preview[.][0-9a-f]{7}$" [$__interval])
 )
 ```
 
 This counts connections, including reconnects. If the collector labels the service
 differently, use its service selector and keep the parsed fields as dimensions.
+
+## Стенд Preview
+
+На хосте выделите отдельную директорию `~/qiyaa-jam-preview`. Положите туда
+`compose.preview.yml` и исполняемый `deploy-preview.sh` из доверенной ревизии. Compose
+слушает только `127.0.0.1:8091`, хранит комнаты в отдельном томе и пишет локальные журналы
+без метки сборщика. Укажите `PUBLIC_URL=https://jam-preview.example.org` в `.env`. Для Android
+App Links добавьте `ASSETLINKS_JSON` с пакетом `io.github.kickoman.qiyaa.preview` и SHA-256
+сертификата Preview APK.
+
+Создайте DNS-запись поддомена, установите `nginx.preview.conf.example` с его именем и
+закажите сертификат Certbot для этого vhost. Проверьте `nginx -t` перед перезагрузкой.
+В GitHub Environment `preview` разрешите ветку `master`, сохраните `PREVIEW_SSH_KEY`
+и переменные `PREVIEW_TARGET`, `PREVIEW_KNOWN_HOSTS` и `PREVIEW_URL`. На хосте разрешите
+этот ключ с `restrict,command="/absolute/path/to/deploy-preview.sh"`. Публичный ключ
+SSH-хоста для `PREVIEW_KNOWN_HOSTS` сверяйте по доверенному подключению.
+
+1. В Actions откройте **Deploy Jam preview**, выберите ветку `master` и укажите `master`
+   или `pr:29`, заменив номер на нужный открытый PR из этого репозитория.
+2. Actions скачивает образ на kaktus временным токеном с правом чтения пакетов. Команда
+   деплоя хранит настройки входа только до завершения прогона. Rollback использует уже
+   скачанный предыдущий образ.
+3. Проверьте `/healthz` на публичном адресе. Ссылка новой комнаты должна вести на этот же адрес.
+   Для отката запустите workflow с `rollback`. Он меняет текущий digest на предыдущий
+   и сохраняет том тестовых комнат.
+4. В Android и Desktop запустите сборки PR из Actions. Возьмите APK и пакет Desktop из
+   артефактов соответствующих прогонов. В каждом хосте вручную укажите адрес стенда в
+   настройках Jam. Создайте комнату, зайдите как гость в браузере и Android, найдите и
+   поставьте в очередь треки Яндекс Музыки и Spotify. Для повтора запишите SHA сервера
+   и обоих клиентов из итогов Actions.

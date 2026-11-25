@@ -39,7 +39,7 @@
             "type": "loki",
             "uid": "${LOKI}"
           },
-          "expr": "sum by (app, app_version, protocol) (count_over_time({service=\"qiyaa-jam\"} | json | event=\"ws_hello\" [$__interval]))",
+          "expr": "sum by (app, app_version, protocol) (count_over_time({service=\"qiyaa-jam\"} | json | event=\"ws_hello\" | app_version !~ \".*-preview[.][0-9a-f]{7}$\" [$__interval]))",
           "legendFormat": "{{app}} {{app_version}} · v{{protocol}}"
         }
       ]

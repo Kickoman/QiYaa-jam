@@ -1,0 +1,40 @@
+name: qiyaa-jam-preview
+
+services:
+  jam:
+    image: ghcr.io/kickoman/qiyaa-jam-preview@${JAM_DIGEST:?JAM_DIGEST is required}
+    restart: unless-stopped
+    stop_grace_period: 30s
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 128
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ports:
+      - "127.0.0.1:8091:8090"
+    environment:
+      PUBLIC_URL: ${PUBLIC_URL:?PUBLIC_URL is required}
+      TRUSTED_PROXY: 172.30.91.1
+      SERVICE_NAME: qiyaa-jam-preview
+      JAM_VERSION: preview.${JAM_SHA:?JAM_SHA is required}
+      ASSETLINKS_JSON: ${ASSETLINKS_JSON:-}
+    volumes:
+      - preview-data:/data
+    tmpfs:
+      - /tmp:size=16m
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "3"
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.91.0/24
+          gateway: 172.30.91.1
+
+volumes:
+  preview-data:

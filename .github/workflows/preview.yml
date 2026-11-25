@@ -1,0 +1,146 @@
+name: Deploy Jam preview
+run-name: Jam preview · ${{ inputs.source }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: master, pr:<open PR number>, or rollback
+        required: true
+        default: master
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: jam-preview
+  cancel-in-progress: false
+
+jobs:
+  source:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.source.outputs.sha }}
+    steps:
+      - id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE: ${{ inputs.source }}
+        run: |
+          case "$SOURCE" in
+            master) sha="$GITHUB_SHA" ;;
+            rollback) exit 0 ;;
+            *)
+              [[ "$SOURCE" =~ ^pr:[1-9][0-9]*$ ]]
+              sha=$(gh api "repos/$GITHUB_REPOSITORY/pulls/${SOURCE#pr:}" --jq '. as $p | select(.state == "open" and .head.repo.full_name == .base.repo.full_name) | .head.sha')
+              ;;
+          esac
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: source
+    if: inputs.source != 'rollback'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.source.outputs.sha }}
+          submodules: true
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - run: npm ci
+      - run: npm run check
+      - name: Browser end-to-end tests
+        run: |
+          npx --workspace web playwright install --with-deps chromium
+          npm run e2e --workspace web
+      - name: Validate and export image
+        run: |
+          docker build --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            -t qiyaa-jam:preview -f deploy/Dockerfile .
+          docker run -d --name preview-smoke -p 127.0.0.1:8091:8090 qiyaa-jam:preview
+          test "$(curl --retry 15 --retry-all-errors --retry-delay 1 --max-time 3 -fsS http://127.0.0.1:8091/healthz)" = ok
+          docker stop -t 10 preview-smoke
+          test "$(docker inspect -f '{{.State.ExitCode}}' preview-smoke)" = 0
+          docker save qiyaa-jam:preview | gzip > jam-image.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jam-image
+          path: jam-image.tar.gz
+          retention-days: 1
+          if-no-files-found: error
+
+  publish:
+    needs: [source, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: jam-image
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - id: push
+        env:
+          SHA: ${{ needs.source.outputs.sha }}
+        run: |
+          docker load -i jam-image.tar.gz
+          image="ghcr.io/kickoman/qiyaa-jam-preview:$SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          docker tag qiyaa-jam:preview "$image"
+          docker push "$image" | tee push.log
+          digest=$(awk '/digest: sha256:/ { print $3 }' push.log)
+          [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: [source, publish]
+    if: |
+      always() && !cancelled() && github.ref == 'refs/heads/master' && needs.source.result == 'success' &&
+      (needs.publish.result == 'success' || inputs.source == 'rollback')
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+    environment:
+      name: preview
+      url: ${{ vars.PREVIEW_URL }}
+    steps:
+      - name: Update kaktus
+        env:
+          SSH_KEY: ${{ secrets.PREVIEW_SSH_KEY }}
+          GHCR_TOKEN: ${{ github.token }}
+          KNOWN_HOSTS: ${{ vars.PREVIEW_KNOWN_HOSTS }}
+          TARGET: ${{ vars.PREVIEW_TARGET }}
+          URL: ${{ vars.PREVIEW_URL }}
+          SHA: ${{ needs.source.outputs.sha }}
+          DIGEST: ${{ needs.publish.outputs.digest }}
+          SOURCE: ${{ inputs.source }}
+        run: |
+          test -n "$SSH_KEY" && test -n "$KNOWN_HOSTS" && test -n "$TARGET" && test -n "$URL"
+          umask 077
+          key=$(mktemp "$RUNNER_TEMP/preview.XXXXXX")
+          trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$SSH_KEY" > "$key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$RUNNER_TEMP/preview-known-hosts"
+          command=rollback
+          if [ "$SOURCE" != rollback ]; then
+            [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ && "$SHA" =~ ^[a-f0-9]{40}$ ]]
+            command="deploy $DIGEST $SHA"
+          fi
+          printf '%s\n%s\n' "$GITHUB_ACTOR" "$GHCR_TOKEN" | \
+            ssh -i "$key" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o "UserKnownHostsFile=$RUNNER_TEMP/preview-known-hosts" "$TARGET" "$command"
+          test "$(curl --retry 6 --retry-all-errors --retry-delay 2 --max-time 10 -fsS "${URL%/}/healthz")" = ok
+          printf 'Jam preview at %s\n\n`%s`\n' "$URL" "$command" >> "$GITHUB_STEP_SUMMARY"

@@ -36,8 +36,23 @@ else
     echo "Expected deploy sha256:<digest> <commit-sha> or rollback" >&2
     exit 2
 fi
-trap 'rm -f candidate.env' EXIT
-compose candidate.env pull
+registry_config=
+cleanup() {
+    rm -f candidate.env
+    if [ -n "$registry_config" ]; then
+        rm -f "$registry_config/config.json"
+        rmdir "$registry_config"
+    fi
+}
+trap cleanup EXIT
+if [ "$command" != rollback ]; then
+    if IFS= read -r registry_user; then
+        registry_config=$(mktemp -d)
+        export DOCKER_CONFIG="$registry_config"
+        docker login ghcr.io --username "$registry_user" --password-stdin >/dev/null
+    fi
+    compose candidate.env pull
+fi
 if ! compose candidate.env up -d --pull never --wait --wait-timeout 60 || ! healthy; then
     echo "Preview failed its health check" >&2
     if [ -s current.env ]; then

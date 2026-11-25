@@ -62,9 +62,10 @@ jobs:
           npm run e2e --workspace web
       - name: Validate and export image
         run: |
-          docker build -t qiyaa-jam:preview -f deploy/Dockerfile .
+          docker build --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            -t qiyaa-jam:preview -f deploy/Dockerfile .
           docker run -d --name preview-smoke -p 127.0.0.1:8091:8090 qiyaa-jam:preview
-          test "$(curl --retry 15 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:8091/healthz)" = ok
+          test "$(curl --retry 15 --retry-all-errors --retry-delay 1 --max-time 3 -fsS http://127.0.0.1:8091/healthz)" = ok
           docker stop -t 10 preview-smoke
           test "$(docker inspect -f '{{.State.ExitCode}}' preview-smoke)" = 0
           docker save qiyaa-jam:preview | gzip > jam-image.tar.gz
@@ -110,6 +111,8 @@ jobs:
       always() && !cancelled() && github.ref == 'refs/heads/master' && needs.source.result == 'success' &&
       (needs.publish.result == 'success' || inputs.source == 'rollback')
     runs-on: ubuntu-latest
+    permissions:
+      packages: read
     environment:
       name: preview
       url: ${{ vars.PREVIEW_URL }}
@@ -117,6 +120,7 @@ jobs:
       - name: Update kaktus
         env:
           SSH_KEY: ${{ secrets.PREVIEW_SSH_KEY }}
+          GHCR_TOKEN: ${{ github.token }}
           KNOWN_HOSTS: ${{ vars.PREVIEW_KNOWN_HOSTS }}
           TARGET: ${{ vars.PREVIEW_TARGET }}
           URL: ${{ vars.PREVIEW_URL }}
@@ -135,7 +139,8 @@ jobs:
             [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ && "$SHA" =~ ^[a-f0-9]{40}$ ]]
             command="deploy $DIGEST $SHA"
           fi
-          ssh -i "$key" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+          printf '%s\n%s\n' "$GITHUB_ACTOR" "$GHCR_TOKEN" | \
+            ssh -i "$key" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
             -o "UserKnownHostsFile=$RUNNER_TEMP/preview-known-hosts" "$TARGET" "$command"
           test "$(curl --retry 6 --retry-all-errors --retry-delay 2 --max-time 10 -fsS "${URL%/}/healthz")" = ok
           printf 'Jam preview at %s\n\n`%s`\n' "$URL" "$command" >> "$GITHUB_STEP_SUMMARY"

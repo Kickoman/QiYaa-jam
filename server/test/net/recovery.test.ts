@@ -108,6 +108,55 @@ function resumeMessage(
 }
 
 describe("recovery over the socket", () => {
+  it.each(["live room", "snapshot"] as const)(
+    "REC-02 REC-06 a protocol 1 host receives a terminal update-required for Spotify in a %s",
+    async (roomSource) => {
+      const dataDir = mkdtempSync(join(tmpdir(), "jam-rec-"));
+      const first = await start(dataDir, false);
+      const host = await JamClient.open(first.url);
+      host.send({ type: "hello", protocol: 2, app: "desktop", appVersion: "test" });
+      await host.nextOf("welcome");
+      host.send({ type: "create", id: "h1", hostName: "Маша", searchSources: ["spotify"] });
+      const { roomId, hostSecret, joinSecret } = await host.nextOf("created");
+      const jam = { host, roomId, hostSecret, joinSecret };
+      host.send({
+        type: "add",
+        id: "h2",
+        track: {
+          source: "spotify",
+          id: "0123456789abcdefghijkl",
+          title: "Spotify track",
+          artists: ["Artist"],
+          durationMs: 200_000,
+        },
+      });
+      await host.nextOf("ack");
+      const snapshot = await latestSnapshot(host, 2);
+      if (roomSource === "snapshot") {
+        await stop(first.server);
+      }
+      const url = roomSource === "snapshot" ? (await start(dataDir, false)).url : first.url;
+      const legacy = await JamClient.hello(url, "desktop");
+      legacy.send(resumeMessage(jam, roomSource === "snapshot" ? snapshot : null));
+      expect(await legacy.next()).toEqual({
+        type: "rejected",
+        reason: "update-required",
+        serverProtocol: 2,
+      });
+      expect(await legacy.closed).toEqual({ code: 1000 });
+
+      const upgraded = await JamClient.open(url);
+      upgraded.send({ type: "hello", protocol: 2, app: "desktop", appVersion: "test" });
+      await upgraded.nextOf("welcome");
+      upgraded.send(resumeMessage(jam, roomSource === "snapshot" ? snapshot : null));
+      expect(await upgraded.nextOf("resumed")).toMatchObject({
+        restored: roomSource === "snapshot",
+      });
+      expect((await upgraded.nextOf("state")).room.queue[0]?.track.source).toBe("spotify");
+      upgraded.close();
+    },
+  );
+
   it("REC-12 the host gets a snapshot at once, then at most one per interval, always the latest", async () => {
     const { url } = await start(mkdtempSync(join(tmpdir(), "jam-rec-")), false, 300);
     const jam = await createJam(url);

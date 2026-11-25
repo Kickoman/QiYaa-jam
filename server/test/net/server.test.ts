@@ -62,13 +62,19 @@ describe("handshake", () => {
     client.close();
   });
 
+  it("negotiates protocol 2 alongside legacy protocol 1", async () => {
+    const client = await JamClient.open(url, freshIp());
+    client.send({ type: "hello", protocol: 2, app: "web", appVersion: "test" });
+    expect(await client.next()).toMatchObject({ type: "welcome", protocol: 2 });
+  });
+
   it("hello with a protocol the server does not speak gets update-required and a clean close", async () => {
     const client = await JamClient.open(url, freshIp());
-    client.send({ type: "hello", protocol: 2, app: "web", appVersion: "9.0.0" });
+    client.send({ type: "hello", protocol: 3, app: "web", appVersion: "9.0.0" });
     expect(await client.next()).toEqual({
       type: "rejected",
       reason: "update-required",
-      serverProtocol: 1,
+      serverProtocol: 2,
     });
     expect(await client.closed).toEqual({ code: 1000 });
   });

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "preact/hooks";
 import type { Room, Track } from "../../../server/src/protocol/generated/types.js";
 import { addButton, waitingOfYours, type AddButton } from "../add-state.js";
-import { formatTime } from "../format.js";
-import type { AddState, Search } from "../session.js";
+import { formatTime, spotifyUrl } from "../format.js";
+import type { AddState, CatalogSource, Search } from "../session.js";
 import { Icon, TitleButton, Window } from "./chrome.js";
 import type { Translate } from "./translate.js";
 
@@ -13,8 +13,8 @@ type Props = {
   readonly search: Search;
   readonly adds: ReadonlyMap<string, AddState>;
   readonly names: ReadonlyMap<string, string>;
-  readonly onFind: (text: string) => boolean;
-  readonly onAdd: (trackId: string) => void;
+  readonly onFind: (text: string, source: CatalogSource) => boolean;
+  readonly onAdd: (trackId: string, source?: CatalogSource) => void;
   readonly onClose: () => void;
 };
 
@@ -40,7 +40,7 @@ function Result(props: {
   readonly number: number;
   readonly track: Track;
   readonly button: AddButton;
-  readonly onAdd: (trackId: string) => void;
+  readonly onAdd: (trackId: string, source?: CatalogSource) => void;
 }) {
   const { t, track, button } = props;
   const active = button.kind === "add" || button.kind === "failed";
@@ -49,7 +49,18 @@ function Result(props: {
       <div class="row-text">
         <p class="row-line">
           {props.number}. <span class="item-artists">{track.artists.join(", ")}</span> -{" "}
-          <span class="item-title">{track.title}</span>
+          {track.source === "spotify" ? (
+            <a
+              class="item-title"
+              href={spotifyUrl(track)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {track.title}
+            </a>
+          ) : (
+            <span class="item-title">{track.title}</span>
+          )}
         </p>
         {stateLine(t, props.reason, button)}
       </div>
@@ -62,7 +73,7 @@ function Result(props: {
           title={t("add")}
           disabled={!active}
           onClick={() => {
-            props.onAdd(track.id);
+            props.onAdd(track.id, track.source === "spotify" ? "spotify" : "yandex");
           }}
         >
           {active ? <Icon name="plus" /> : "…"}
@@ -83,6 +94,12 @@ export function SearchPanel(props: Props) {
       setCollapsed(false);
     }
   }, [search.kind]);
+  const sources = room.searchSources ?? ["yandex"];
+  const [preferred, setPreferred] = useState<CatalogSource>("yandex");
+  const source = sources.includes(preferred) ? preferred : sources[0];
+  useEffect(() => {
+    props.onClose();
+  }, [source]);
   const offline = !room.hostOnline;
   const limitHit = waitingOfYours(room) >= room.settings.maxPendingPerGuest;
   const results = search.kind === "results" ? search : null;
@@ -106,12 +123,32 @@ export function SearchPanel(props: Props) {
         class="search-form"
         onSubmit={(event) => {
           event.preventDefault();
-          props.onFind(text);
+          if (source) {
+            props.onFind(text, source);
+          }
         }}
       >
         <label class="field-label" for="search">
           {t("searchLabel")}
         </label>
+        {sources.length > 1 ? (
+          <fieldset class="search-sources" aria-label={t("searchSource")}>
+            {sources.map((catalog) => (
+              <label class="search-source" key={catalog}>
+                <input
+                  type="radio"
+                  name="search-source"
+                  value={catalog}
+                  checked={source === catalog}
+                  onChange={() => {
+                    setPreferred(catalog);
+                  }}
+                />
+                {catalog === "yandex" ? "Yandex Music" : "Spotify"}
+              </label>
+            ))}
+          </fieldset>
+        ) : null}
         <div class="search-row">
           <input
             id="search"
@@ -123,7 +160,7 @@ export function SearchPanel(props: Props) {
             spellcheck={false}
             maxLength={100}
             value={text}
-            disabled={offline}
+            disabled={offline || !source}
             placeholder={t("searchPlaceholder")}
             onInput={(event) => {
               setText(event.currentTarget.value);
@@ -132,7 +169,7 @@ export function SearchPanel(props: Props) {
           <button
             class="btn btn-primary find"
             type="submit"
-            disabled={offline || text.trim().length === 0}
+            disabled={offline || !source || text.trim().length === 0}
           >
             <Icon name="search" />
             {t("searchButton")}

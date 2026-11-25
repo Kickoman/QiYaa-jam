@@ -57,6 +57,12 @@ export const ROOM_WAIT_MS = 10 * 60_000;
 export const ROOM_RETRY_MS: readonly number[] = [5_000, 10_000, 20_000, 30_000];
 const SEARCH_LIMIT = 100;
 
+export type CatalogSource = "yandex" | "spotify";
+
+export function catalogKey(id: string, source?: string): string {
+  return source === "spotify" ? `spotify:${id}` : id;
+}
+
 export function cleanSearch(text: string): string | null {
   const trimmed = text.trim().replace(/\s+/g, " ");
   return trimmed.length >= 1 && Array.from(trimmed).length <= SEARCH_LIMIT ? trimmed : null;
@@ -145,13 +151,20 @@ export class JamSession {
     return true;
   }
 
-  find(text: string): boolean {
+  find(text: string, source: CatalogSource = "yandex"): boolean {
     const clean = cleanSearch(text);
     if (clean === null) {
       return false;
     }
     const id = this.nextId();
-    if (!this.connection?.send({ type: "search", id, text: clean })) {
+    if (
+      !this.connection?.send({
+        type: "search",
+        id,
+        text: clean,
+        ...(source === "spotify" ? { source } : {}),
+      })
+    ) {
       return false;
     }
     this.searchId = id;
@@ -166,13 +179,21 @@ export class JamSession {
     this.emit();
   }
 
-  add(trackId: string): void {
+  add(trackId: string, source: CatalogSource = "yandex"): void {
     const id = this.nextId();
-    if (!this.connection?.send({ type: "add", id, trackId })) {
+    if (
+      !this.connection?.send({
+        type: "add",
+        id,
+        trackId,
+        ...(source === "spotify" ? { source } : {}),
+      })
+    ) {
       return;
     }
-    this.addIds.set(id, trackId);
-    this.setAdd(trackId, "sending");
+    const key = catalogKey(trackId, source);
+    this.addIds.set(id, key);
+    this.setAdd(key, "sending");
   }
 
   private setAdd(trackId: string, state: AddState): void {

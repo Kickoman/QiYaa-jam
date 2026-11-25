@@ -15,7 +15,7 @@ export const HOST_CONNECTION = "c-host";
 export const HOST_SECRET = "HostSecretHostSecretHostSecretHostSecret123";
 export const JOIN_SECRET = "JoinSecretJoinSecret12";
 
-export function track(id: string, title = `Track ${id}`): CatalogTrack {
+export function track(id: string, title = `Track ${id}`): CatalogTrack & { source?: "yandex" } {
   return {
     id,
     albumId: "1",

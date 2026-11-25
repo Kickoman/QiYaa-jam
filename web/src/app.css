@@ -472,6 +472,45 @@ button {
   gap: var(--space-3);
 }
 
+.search-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.search-source {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: var(--hit-min);
+  padding: 0 var(--space-6);
+  background: var(--chrome-800);
+  box-shadow: var(--bevel-raised-thin);
+  color: var(--chrome-200);
+  font: var(--text-sm) var(--font-mono);
+  cursor: pointer;
+}
+
+.search-source:hover {
+  background: var(--chrome-700);
+}
+
+.search-source input {
+  margin: 0;
+  accent-color: var(--accent);
+  color-scheme: dark;
+  cursor: inherit;
+}
+
+.search-source:has(input:checked) {
+  box-shadow: var(--bevel-sunken-thin);
+  color: var(--text-title);
+}
+
 .search-row {
   display: flex;
   gap: var(--space-4);

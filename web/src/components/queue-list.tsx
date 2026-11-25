@@ -1,5 +1,5 @@
 import type { Room } from "../../../server/src/protocol/generated/types.js";
-import { formatTime } from "../format.js";
+import { formatTime, spotifyUrl } from "../format.js";
 import { Icon, Lamp, Window } from "./chrome.js";
 import type { Translate } from "./translate.js";
 
@@ -31,7 +31,18 @@ export function QueueList({ t, room, names, onRemove }: Props) {
                 <div class="row-text">
                   <p class="row-line">
                     {index + 1}. <span class="item-artists">{item.track.artists.join(", ")}</span> -{" "}
-                    <span class="item-title">{item.track.title}</span>
+                    {item.track.source === "spotify" ? (
+                      <a
+                        class="item-title"
+                        href={spotifyUrl(item.track)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {item.track.title}
+                      </a>
+                    ) : (
+                      <span class="item-title">{item.track.title}</span>
+                    )}
                   </p>
                   <p class={own ? "row-meta row-mine" : "row-meta"}>
                     {own ? t("you") : (names.get(item.addedBy) ?? "?")}
@@ -59,6 +70,31 @@ export function QueueList({ t, room, names, onRemove }: Props) {
           })}
         </ol>
       )}
+      {room.recent.length > 0 ? (
+        <details class="playlist">
+          <summary>{t("recentTracks")}</summary>
+          <ul class="items">
+            {room.recent.map(({ itemId, track }) => {
+              const url = spotifyUrl(track);
+              return (
+                <li class="row item" key={itemId}>
+                  <p class="row-line">
+                    <span class="item-artists">{track.artists.join(", ")}</span> -{" "}
+                    {url ? (
+                      <a class="item-title" href={url} target="_blank" rel="noopener noreferrer">
+                        {track.title}
+                      </a>
+                    ) : (
+                      <span class="item-title">{track.title}</span>
+                    )}
+                  </p>
+                  <span class="row-time">{formatTime(track.durationMs)}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </details>
+      ) : null}
     </Window>
   );
 }

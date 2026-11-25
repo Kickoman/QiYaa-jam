@@ -107,9 +107,9 @@ function Room({
           search={view.search}
           adds={view.adds}
           names={names}
-          onFind={(text) => session.find(text)}
-          onAdd={(trackId) => {
-            session.add(trackId);
+          onFind={(text, source) => session.find(text, source)}
+          onAdd={(trackId, source) => {
+            session.add(trackId, source);
           }}
           onClose={() => {
             session.closeSearch();

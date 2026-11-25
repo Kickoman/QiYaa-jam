@@ -132,16 +132,22 @@ export function SearchPanel(props: Props) {
           {t("searchLabel")}
         </label>
         {sources.length > 1 ? (
-          <select
-            aria-label={t("searchSource")}
-            value={source}
-            onChange={(event) => {
-              setPreferred(event.currentTarget.value === "spotify" ? "spotify" : "yandex");
-            }}
-          >
-            <option value="yandex">Yandex Music</option>
-            <option value="spotify">Spotify</option>
-          </select>
+          <fieldset class="search-sources" aria-label={t("searchSource")}>
+            {sources.map((catalog) => (
+              <label class="search-source" key={catalog}>
+                <input
+                  type="radio"
+                  name="search-source"
+                  value={catalog}
+                  checked={source === catalog}
+                  onChange={() => {
+                    setPreferred(catalog);
+                  }}
+                />
+                {catalog === "yandex" ? "Yandex Music" : "Spotify"}
+              </label>
+            ))}
+          </fieldset>
         ) : null}
         <div class="search-row">
           <input
